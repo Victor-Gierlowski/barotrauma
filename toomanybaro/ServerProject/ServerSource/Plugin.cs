@@ -5,10 +5,18 @@ using System.Text;
 using System.Threading.Tasks;
 using Barotrauma;
 
-namespace MyModName
+namespace toomanybaro
 {
     public partial class Plugin : IAssemblyPlugin
     {
-        // Client-specific code
+
+        public void InitLocal()
+        {
+
+        }
+        public void LoadCompleted()
+        {
+
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Barotrauma;
 
@@ -8,7 +9,7 @@ using Barotrauma;
 [assembly: IgnoresAccessChecksTo("DedicatedServer")]
 [assembly: IgnoresAccessChecksTo("BarotraumaCore")]
 
-namespace MyModName
+namespace toomanybaro
 {
     public partial class Plugin : IAssemblyPlugin
     {
@@ -16,7 +17,7 @@ namespace MyModName
         {
             // When your plugin is loading, use this instead of the constructor
             // Put any code here that does not rely on other plugins.
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         public void OnLoadCompleted()
@@ -33,7 +34,7 @@ namespace MyModName
         public void Dispose()
         {
             // Cleanup your plugin!
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
     }
 }

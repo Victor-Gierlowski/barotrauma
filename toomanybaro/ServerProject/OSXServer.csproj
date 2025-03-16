@@ -40,12 +40,13 @@
     </ItemGroup>
 
   <Import Project="..\SharedProject\SharedProject.projitems" Label="Shared" />
-  <Import Project="../Build.props"/>
+  <Import Project="../Build.props" />
 
   <PropertyGroup>
     <RootNamespace>$(SolutionName.Replace(" ", "_"))</RootNamespace>
     <PlatformTarget>x64</PlatformTarget>
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <AssemblyName>toomanybaro</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

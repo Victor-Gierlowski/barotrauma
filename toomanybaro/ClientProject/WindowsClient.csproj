@@ -11,22 +11,25 @@
   </PropertyGroup>
 
   <Import Project="..\SharedProject\SharedProject.projitems" Label="Shared" />
-  <Import Project="../Build.props"/>
+  <Import Project="../Build.props" />
+  
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <DefineConstants>TRACETRACE;SERVER;WINDOWS</DefineConstants>
+    <DefineConstants>TRACETRACE;CLIENT;WINDOWS</DefineConstants>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <DefineConstants>TRACETRACE;SERVER;WINDOWS</DefineConstants>
+    <DefineConstants>TRACETRACE;CLIENT;WINDOWS</DefineConstants>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>..\Refs\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="DedicatedServer">
-      <HintPath>..\Refs\Windows\DedicatedServer.dll</HintPath>
+    <Reference Include="Barotrauma">
+      <HintPath>..\Refs\Windows\Barotrauma.dll</HintPath>
     </Reference>
     <Reference Include="BarotraumaCore">
       <HintPath>..\Refs\Windows\BarotraumaCore.dll</HintPath>
@@ -58,6 +61,7 @@
     <RootNamespace>$(SolutionName.Replace(" ", "_"))</RootNamespace>
     <PlatformTarget>x64</PlatformTarget>
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <AssemblyName>toomanybaro</AssemblyName>
   </PropertyGroup>
 
   <Target Name="CopyFiles" AfterTargets="Build">
@@ -65,8 +69,8 @@
       <Assemblies Include="$(TargetDir)$(TargetName).dll" />
       <DepsFiles Include="$(TargetDir)$(TargetName).deps.json" />
     </ItemGroup>
-    <Copy SourceFiles="@(Assemblies)" DestinationFiles="$(ModDeployDir)bin\Server\Windows\$(TargetName).dll" />
-    <Copy SourceFiles="@(DepsFiles)" DestinationFiles="$(ModDeployDir)bin\Server\Windows\$(TargetName).deps.json" />
+    <Copy SourceFiles="@(Assemblies)" DestinationFiles="$(ModDeployDir)bin\Client\Windows\$(TargetName).dll" />
+    <Copy SourceFiles="@(DepsFiles)" DestinationFiles="$(ModDeployDir)bin\Client\Windows\$(TargetName).deps.json" />
   </Target>
 
 </Project>
