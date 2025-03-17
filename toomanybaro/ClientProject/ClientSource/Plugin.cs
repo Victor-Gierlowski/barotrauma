@@ -54,7 +54,14 @@ namespace tooManyBaro
             Barotrauma.DebugConsole.NewMessage("Loaded updateKeys Settings Menu", Color.Gold);
 
         }
-        public void OnLoadCompleted() { }
+        public void OnLoadCompleted() {
+            foreach (ItemPrefab iprefab in ItemPrefab.Prefabs)
+            {
+                foreach(FabricationRecipe recipe in iprefab.FabricationRecipes.Values)
+                    InventoryPatch.allRecipes.Add(recipe);
+            }
+            DebugConsole.NewMessage($"Found {InventoryPatch.allRecipes.Count} recipes ! ");
+        }
         public void PreInitPatching() { }
         public void Dispose()
         {
@@ -146,7 +153,10 @@ namespace tooManyBaro
         }
         public static void printFabricatorUsages()
         {
+            DebugConsole.NewMessage("Usages : \n");
             if (Usages != null && Usages.Count > 0)
+            {
+                DebugConsole.NewMessage($"{Usages.Count}\n");
                 foreach (FabricationRecipe recipe in Usages)
                 {
                     String recipeString = "";
@@ -167,6 +177,7 @@ namespace tooManyBaro
                         DebugConsole.NewMessage($"____________________\n", Color.HotPink);
                     }
                 }
+            }
         }
         /**
          * Go through fabricator recipe that used or produce the item
@@ -174,54 +185,40 @@ namespace tooManyBaro
         public static List<FabricationRecipe> Producers = new List<FabricationRecipe>();
         public static List<FabricationRecipe> Usages = new List<FabricationRecipe>();
 
+        public static List<FabricationRecipe> allRecipes = new List<FabricationRecipe>();
+
         public static void searchFabricatorRecipe()
         {
+            DebugConsole.NewMessage($"{allRecipes.Count} recipes to search");
             if (LastOver != null)
             {
                 Producers.Clear();
                 Usages.Clear();
-                foreach (var kvp in LastOver.Prefab.FabricationRecipes)
+                //foreach (var kvp in LastOver.Prefab.FabricationRecipes)
+                foreach(FabricationRecipe recipe in allRecipes)
                 {
-                    uint key = kvp.Key;
-                    FabricationRecipe recipe = kvp.Value;
                     ItemPrefab i = recipe.TargetItem;
                     if (LastOver.Name == i.Name)
                     {
                         Producers.Add(recipe);
                     }
                     else
+                    {
                         foreach (var rqitem in recipe.RequiredItems)
                         {
                             bool toAdd = false;
-                            if (rqitem.MatchesItem(LastOver))
+                            bool dfItem = rqitem.DefaultItem == LastOver.Prefab.Identifier;
+                            bool uiid = rqitem.UintIdentifier == LastOver.Prefab.UintIdentifier;
+                            bool match = rqitem.MatchesItem(LastOver);
+                            if (dfItem || match || uiid)
                                 toAdd = true;
-                            if(!toAdd)    
-                                if(rqitem.FirstMatchingPrefab != null && rqitem.FirstMatchingPrefab.Name == LastOver.Name)
-                                {
-                                    toAdd = true;
-                                }
-                            if (!toAdd)
-                            {
-                                foreach(var reqPrefabs in rqitem.ItemPrefabs)
-                                {
-                                    if(LastOver.Name == reqPrefabs.Name)
-                                    {
-                                        toAdd = true;
-                                        break;
-                                    }
-                                    if(LastOver.Prefab.Identifier == reqPrefabs.Identifier)
-                                    {
-                                        toAdd = true;
-                                        break;
-                                    }
-                                }
-                            } 
                             if (toAdd)
                             {
                                 Usages.Add(recipe);
                                 break;
                             }
                         }
+                    }
                 }
                 printFabricatorProducer();
                 printFabricatorUsages();
