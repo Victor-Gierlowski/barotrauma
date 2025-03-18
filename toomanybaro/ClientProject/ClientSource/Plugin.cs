@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -13,6 +14,7 @@ using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Mono.Cecil;
+using static Barotrauma.PetBehavior.ItemProduction;
 
 
 
@@ -92,9 +94,126 @@ namespace tooManyBaro
         }
     }
 
+
+    class GUI
+    {
+        private static GUILayoutGroup? frame;
+        private static GUILayoutGroup? innerFrame;
+        private static GUILayoutGroup? mainFrame;
+        private static GUIFrame? topFrame;
+        private static GUILayoutGroup? itemListFrame;
+        private static GUILayoutGroup? paddedItemFrame;
+        private static GUILayoutGroup? usageFrame;
+        private static GUILayoutGroup? paddedUsageFrame;
+
+        private static List<GUIComponent> allGUIComponents = new();
+
+        public static void Open(RectTransform rectTransform)
+        {
+            Close();
+            //frame = new GUIFrame(new RectTransform(new Vector2(0.5f,0.5f), rectTransform, Anchor.Center));
+            frame = new GUILayoutGroup(new RectTransform(new Vector2(0.95f, 0.9f), rectTransform, Anchor.CenterRight), childAnchor: Anchor.TopCenter);
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.05f), frame.RectTransform), "Toomanybaro item craft", font: GUIStyle.SubHeadingFont)
+            {
+                TextAlignment = Alignment.Center,
+                AutoScaleVertical = true
+            };
+            innerFrame = new GUILayoutGroup(new RectTransform(new Vector2(1f, 0.95f), frame.RectTransform, Anchor.Center), isHorizontal: true)
+            {
+                RelativeSpacing = 0.01f,
+                Stretch = true,
+                CanBeFocused = true
+            };
+
+            mainFrame = new GUILayoutGroup(new RectTransform(Vector2.One, innerFrame.RectTransform), childAnchor: Anchor.TopCenter)
+            {
+                RelativeSpacing = 0.02f,
+                Stretch = true,
+                CanBeFocused = true
+            };
+            topFrame = new GUIFrame(new RectTransform(new Vector2(1.0f, 0.65f), mainFrame.RectTransform), style: "InnerFrameDark");
+            // PRODUCERS SIDE
+            itemListFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.5f, 1.0f), topFrame.RectTransform), childAnchor: Anchor.Center);
+            var itemList = new GUIListBox(new RectTransform(new Vector2(1f, 0.9f), itemListFrame.RectTransform), style: null);
+            paddedItemFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.9f, 0.9f), itemListFrame.RectTransform));
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), itemList.Content.RectTransform), "List of Recipe as Target", textAlignment: Alignment.Center);
+
+            // SEPARATOR FOR LEFT AND RIGHT
+            new GUIFrame(new RectTransform(new Vector2(0.01f, 0.9f), topFrame.RectTransform, Anchor.Center), style: "VerticalLine");
+
+            // USAGES SIDE
+
+            usageFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.5f, 1f), topFrame.RectTransform, Anchor.TopRight), childAnchor: Anchor.Center);
+            var itemListUsage = new GUIListBox(new RectTransform(new Vector2(1f, 0.9f), usageFrame.RectTransform), style: null);
+            paddedUsageFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.95f, 0.9f), usageFrame.RectTransform));
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), itemListUsage.Content.RectTransform), "List Of Recipe as Ingredient", textAlignment: Alignment.Center);
+
+            //GUIListBox list = new GUIListBox(new RectTransform(new Vector2(0.95f, 0.95f), innerFrame.rectTransform, Anchor.Center), false);
+            AddRecipesToList(InventoryPatch.Producers, itemList.Content.rectTransform);
+            AddRecipesToList(InventoryPatch.Usages, itemListUsage.Content.rectTransform);
+
+            new GUIButton(new RectTransform(new Vector2(0.1f, 0.01f), innerFrame.RectTransform, Anchor.BottomCenter)
+            {
+                RelativeOffset = new Vector2(0f, 0.05f)
+            }, "Close")
+            {
+                OnClicked = (GUIButton button, object obj) =>
+                {
+                    Close();
+
+                    return true;
+                }
+            };
+            allGUIComponents.Add(frame);
+            allGUIComponents.Add(innerFrame);
+            allGUIComponents.Add(mainFrame);
+            allGUIComponents.Add(topFrame);
+            allGUIComponents.Add(itemListFrame);
+            allGUIComponents.Add(paddedItemFrame);
+            allGUIComponents.Add(usageFrame);
+        }
+
+        public static void AddRecipesToList(List<FabricationRecipe> l, RectTransform targetRect )
+        {
+            foreach (var recipe in l)
+            {
+                GUIListBox lrecipe = new GUIListBox(new RectTransform(new Vector2(1.0f, 0.1f), targetRect), isHorizontal: true);
+                foreach (FabricationRecipe.RequiredItem ip in recipe.RequiredItems)
+                {
+                    var itemIcon = ip.ItemPrefabs.First().InventoryIcon ?? ip.ItemPrefabs.First().Sprite;
+                    if (itemIcon != null)
+                    {
+                        new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"x{ip.Amount}", textAlignment: Alignment.BottomRight);
+                        new GUIImage(new RectTransform(new Vector2(0.1f, 1.0f), lrecipe.Content.rectTransform), itemIcon, scaleToFit: true)
+                        {
+                            Color = ip.ItemPrefabs.First().InventoryIconColor,
+                            toolTip = RichString.Rich(ip.ItemPrefabs.First().Description)
+                        };
+                    }
+                }
+                allGUIComponents.Add(lrecipe);
+            }
+        }
+
+        public static void Close()
+        {
+            for(var i =0; i < allGUIComponents.Count ; i++){
+                GUIComponent comp = allGUIComponents.ElementAt(i);
+                if(comp != null) { 
+                    comp?.Parent?.RemoveChild(comp);
+                    comp?.ClearChildren();
+                    //comp = null;
+                } 
+            }
+            allGUIComponents.Clear();
+            // topFrame?.Parent.RemoveChild(topFrame);
+            // topFrame = null;
+        }
+    }
+
     class InventoryPatch
     {
-        static Item? LastOver = null;
+        static Barotrauma.Item? LastOver = null;
         static bool searchDone = true;
         static DateTime timeCallSearch = DateTime.Now;
         /**
@@ -121,7 +240,7 @@ namespace tooManyBaro
             {
                 DebugConsole.NewMessage("Starts looking for recipe");
                 searchFabricatorRecipe();
-
+                GUI.Open(CharacterHUD.HUDFrame.rectTransform);
             }
             searchDone = true;
         }
@@ -226,7 +345,7 @@ namespace tooManyBaro
         }
 
         static Rectangle target_interactRect;
-        public static void UpdateSlotPostfix(Inventory __instance, VisualSlot slot, int slotIndex, Item item, bool isSubSlot)
+        public static void UpdateSlotPostfix(Inventory __instance, VisualSlot slot, int slotIndex, Barotrauma.Item item, bool isSubSlot)
         {
             // Logique à exécuter après l'appel de la méthode originale
             //DebugConsole.NewMessage($"UpdateSlot called with slotIndex: {slotIndex}, isSubSlot: {isSubSlot}", Color.Gold);
@@ -252,16 +371,6 @@ namespace tooManyBaro
                     LastOver = item;
                     target_interactRect = interactRect;
                 }
-                //if (PlayerInput.IsAltDown())
-                //{
-                //    if (searchDone)
-                //    {
-                //        DebugConsole.NewMessage("ASKED FOR INPUT WITH ALT");
-                //        searchForItem();
-                //    }
-                //}
-                //DebugConsole.NewMessage($"Mouse on slot: {mouseOn} i:{slotIndex} sub:{isSubSlot}", Color.Gold);
-                //DebugConsole.NewMessage($"Item name: {item?.Name}",Color.Blue);
             }
         }
     }
