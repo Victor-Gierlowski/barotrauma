@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Timers;
 using Barotrauma;
@@ -16,6 +17,7 @@ using Microsoft.Xna.Framework.Input;
 using Mono.Cecil;
 using static Barotrauma.FabricationRecipe;
 using static Barotrauma.PetBehavior.ItemProduction;
+using Item = Barotrauma.Item;
 
 
 
@@ -84,6 +86,11 @@ namespace tooManyBaro
 
     class toomanybaroKeyBoardInput
     {
+        /// <summary>
+        /// Because i couldn't find any simpler way to listen for keyboard input.
+        /// After the core game update, I check too for my inputs.
+        /// </summary>
+        /// <param name="deltaTime"></param>
         public static void onUpdateKeys(double deltaTime)
         {
             Keys[] kPressed = PlayerInput.keyboardState.GetPressedKeys();
@@ -92,6 +99,10 @@ namespace tooManyBaro
                 if (key == Keys.O)
                     InventoryPatch.checkInput();
             }
+            var lftclick = PlayerInput.PrimaryMouseButtonClicked();
+            var rghclick = PlayerInput.SecondaryMouseButtonClicked();
+            if (lftclick || rghclick)
+                GUI.mouseClicked(lftclick);
         }
     }
 
@@ -109,6 +120,10 @@ namespace tooManyBaro
 
         private static List<GUIComponent> allGUIComponents = new();
 
+        /// <summary>
+        /// Function to open the UI. Create all the subUI and fill the frames etc..
+        /// </summary>
+        /// <param name="rectTransform">main target to draw and inherit all the ui. (CharacterHUD.HUDFrame.rectTransform)</param>
         public static void Open(RectTransform rectTransform)
         {
             Close();
@@ -198,6 +213,13 @@ namespace tooManyBaro
             allGUIComponents.Add(paddedItemFrame);
             allGUIComponents.Add(usageFrame);
         }
+
+        /// <summary>
+        /// Similar to <seealso cref="AddRecipesToList(List{FabricationRecipe}, RectTransform)"/> this function 
+        /// draw the result of deconstructing the object.
+        /// </summary>
+        /// <param name="deconstructItems">List of item given for the destruction of the object</param>
+        /// <param name="rectTransform">Target to draw to.</param>
         public static void AddDeconstructToList(List<DeconstructItem> deconstructItems, RectTransform rectTransform)
         {
             GUIListBox itemlist = new GUIListBox(new RectTransform(new Vector2(1f, 0.5f), rectTransform), isHorizontal: true);
@@ -207,17 +229,28 @@ namespace tooManyBaro
                 var itemicon = ip.Sprite;
                 if(itemicon != null)
                 {
-                    new GUIImage(new RectTransform(new Vector2(0.2f, 0.8f), itemlist.Content.rectTransform), itemicon, scaleToFit: true)
+                    RichString tooltip = ip.CreateTooltipText();
+                    GUIImage img = new GUIImage(new RectTransform(new Vector2(0.2f, 0.8f), itemlist.Content.rectTransform), itemicon, scaleToFit: true)
                     {
                         color = ip.SpriteColor,
-                        toolTip = RichString.Rich(ip.Description)
+                        toolTip = tooltip
                     };
+                    imageToItem.Add((img, ItemPrefab.GetItemPrefab(ip.Identifier.value)));
                     new GUITextBlock(new RectTransform(new Vector2(0f, 1f), itemlist.Content.rectTransform), $"x{item.Amount}", textAlignment: Alignment.BottomRight);
                 }
             }
             allGUIComponents.Add(itemlist);
 
         }
+
+        public static List<(GUIImage, ItemPrefab)> imageToItem = new();
+
+        /// <summary>
+        /// We go through the list of recipe given, and add them to the HUD object given.
+        /// Same function for the Producer and Usages list.
+        /// </summary>
+        /// <param name="l">List of recipes</param>
+        /// <param name="targetRect">Target to draw to.</param>
         public static void AddRecipesToList(List<FabricationRecipe> l, RectTransform targetRect )
         {
             foreach (var recipe in l)
@@ -235,12 +268,14 @@ namespace tooManyBaro
                     var itemIcon = ip.ItemPrefabs.First().InventoryIcon ?? ip.ItemPrefabs.First().Sprite;
                     if (itemIcon != null)
                     {
-                        new GUIImage(new RectTransform(new Vector2(0.2f, 1.0f), lrecipe.Content.rectTransform), itemIcon, scaleToFit: true)
+                        RichString tooltip = ip.ItemPrefabs.First().CreateTooltipText();
+                        var img = new GUIImage(new RectTransform(new Vector2(0.2f, 1.0f), lrecipe.Content.rectTransform), itemIcon, scaleToFit: true)
                         {
                             Color = ip.ItemPrefabs.First().InventoryIconColor,
-                            toolTip = RichString.Rich(ip.ItemPrefabs.First().Description)
+                            toolTip = tooltip,
                         };
                         new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"x{ip.Amount}", textAlignment: Alignment.BottomRight);
+                        imageToItem.Add((img, ip.ItemPrefabs.First()));
                     }
                 }
                 var outputIcon = recipe.TargetItem.InventoryIcon ?? recipe.TargetItem.Sprite;
@@ -251,11 +286,13 @@ namespace tooManyBaro
                         isSelected=false,
                         CanBeFocused=false,
                     };
-                    new GUIImage(new RectTransform(new Vector2(0.2f, 1.0f), rrecipe.Content.rectTransform), outputIcon, scaleToFit: true)
+                    RichString tooltip = recipe.TargetItem.CreateTooltipText();
+                    var img = new GUIImage(new RectTransform(new Vector2(0.2f, 1.0f), rrecipe.Content.rectTransform), outputIcon, scaleToFit: true)
                     {
                         Color = recipe.TargetItem.InventoryIconColor,
-                        toolTip = RichString.Rich(recipe.TargetItem.Description)
+                        toolTip = tooltip
                     };
+                    imageToItem.Add((img, recipe.TargetItem));
                     new GUITextBlock(new RectTransform(new Vector2(0.0f, 1f), rrecipe.Content.rectTransform), $"x{recipe.Amount}", textAlignment: Alignment.BottomRight);
                 }
                 allGUIComponents.Add(recipeLine);
@@ -264,9 +301,14 @@ namespace tooManyBaro
             }
         }
 
+        /// <summary>
+        /// Close the UI, we also clear all the gui component. Why ? because all the exemples i could find did something
+        /// similar and it was not working unless i do that. Breaking the order would also provoke null exception somewhere.
+        /// </summary>
         public static void Close()
         {
-            for(var i =0; i < allGUIComponents.Count ; i++){
+            InventoryPatch.swapped = false;
+            for (var i =0; i < allGUIComponents.Count ; i++){
                 GUIComponent comp = allGUIComponents.ElementAt(i);
                 if(comp != null) { 
                     comp?.Parent?.RemoveChild(comp);
@@ -275,19 +317,47 @@ namespace tooManyBaro
                 } 
             }
             allGUIComponents.Clear();
+            imageToItem.Clear();
             // topFrame?.Parent.RemoveChild(topFrame);
             // topFrame = null;
+        }
+
+        /// <summary>
+        /// Choose the action to do upon event of the mouse.
+        /// </summary>
+        /// <param name="isLeftClick">if true then it's left click that was clicked. False means right click.</param>
+        public static void mouseClicked(bool isLeftClick)
+        {
+            if (!isLeftClick)
+            {
+                if (InventoryPatch.swapped)
+                    InventoryPatch.unswapSubItem();
+                else
+                    Close();
+                return;
+            }
+            ItemPrefab toswapto = null;
+            foreach(var comp in imageToItem)
+            {
+                if (comp.Item1.rectTransform.Rect.Contains(PlayerInput.MousePosition))
+                {
+                    toswapto = comp.Item2;
+                    break;
+                }
+            }
+            if (toswapto != null)
+                InventoryPatch.swapSubItem(toswapto);
         }
     }
 
     class InventoryPatch
     {
-        static Barotrauma.Item? LastOver = null;
+        static Barotrauma.ItemPrefab? LastOver = null;
         static bool searchDone = true;
         static DateTime timeCallSearch = DateTime.Now;
-        /**
-         * Check after the keyboard input if mouse still within the ?hitbox? of the item Hovered.
-         */
+        /// <summary>
+        /// Check after the keyboard input if mouse still within the ?hitbox? of the item Hovered.
+        /// </summary>
         public static void checkInput()
         {
             bool mouseOn = target_interactRect.Contains(PlayerInput.MousePosition);
@@ -295,10 +365,44 @@ namespace tooManyBaro
                 searchForItem();
         }
 
-        /**
-         * Main function to search usage. Will prevent too frequent call {200ms}
-         * If a search is still in effect prevent any other call. => searchDone [flag]
-         */
+        public static List<Barotrauma.ItemPrefab> swapSave = new();
+        public static bool swapped = false;
+
+        /// <summary>
+        /// Swap the current item for another one. Allow a continuous search. 
+        /// </summary>
+        /// <param name="i"> The new item to focus for search </param>
+        public static void swapSubItem(Barotrauma.ItemPrefab i)
+        {
+            if(LastOver != null)
+                swapSave.Add(LastOver);
+            LastOver = i;
+            searchDone = false;
+            GUI.Close();
+            searchFabricatorRecipe();
+            searchDone = true;
+            GUI.Open(CharacterHUD.HUDFrame.rectTransform);
+        }
+        /// <summary>
+        /// Unswap the stack of item searched. Allow to go back until we reach the first item. 
+        /// </summary>
+        public static void unswapSubItem()
+        {
+            if (swapped)
+                LastOver = swapSave.Last();
+            if(LastOver != null)
+                swapSave.RemoveAt(swapSave.Count - 1);
+            if (swapSave.Count == 0)
+                swapped = false;
+            GUI.Close();
+            searchFabricatorRecipe();
+            searchDone = true;
+            GUI.Open(CharacterHUD.HUDFrame.rectTransform);
+        }
+        /// <summary>
+        /// Main function to search usage. Will prevent too frequent call {200ms}
+        /// If a search is still in effect prevent any other call. => searchDone [flag
+        /// </summary>
         public static void searchForItem()
         {
             TimeSpan elapsed = DateTime.Now - timeCallSearch;
@@ -314,6 +418,9 @@ namespace tooManyBaro
             searchDone = true;
         }
 
+        /// <summary>
+        /// Write the fabricator recipe found in the Debug console. First use of the mod, now only for debug.
+        /// </summary>
         public static void printFabricatorProducer()
         {
             if(Producers != null && Producers.Count > 0)
@@ -339,6 +446,9 @@ namespace tooManyBaro
                 }
             }
         }
+        /// <summary>
+        /// Same as <see cref="printFabricatorProducer"/>
+        /// </summary>
         public static void printFabricatorUsages()
         {
             DebugConsole.NewMessage("Usages : \n");
@@ -367,16 +477,17 @@ namespace tooManyBaro
                 }
             }
         }
-        /**
-         * Go through fabricator recipe that used or produce the item
-         */
+
         public static List<FabricationRecipe> Producers = new List<FabricationRecipe>();
         public static List<FabricationRecipe> Usages = new List<FabricationRecipe>();
         public static List<DeconstructItem> DeconstructItems = new List<DeconstructItem>();
         
 
         public static List<FabricationRecipe> allRecipes = new List<FabricationRecipe>();
-
+        /// <summary>
+        /// Will iterate through all the fabricator recipes and deconstructor to search for any link with the item
+        /// that is LastOver.
+        /// </summary>
         public static void searchFabricatorRecipe()
         {
             DebugConsole.NewMessage($"{allRecipes.Count} recipes to search");
@@ -386,7 +497,7 @@ namespace tooManyBaro
                 Usages.Clear();
                 DeconstructItems.Clear();
                 if (LastOver.AllowDeconstruct)
-                    DeconstructItems = LastOver.Prefab.DeconstructItems.ToList();
+                    DeconstructItems = LastOver.DeconstructItems.ToList();
                 //foreach (var kvp in LastOver.Prefab.FabricationRecipes)
                 foreach(FabricationRecipe recipe in allRecipes)
                 {
@@ -400,10 +511,10 @@ namespace tooManyBaro
                         foreach (var rqitem in recipe.RequiredItems)
                         {
                             bool toAdd = false;
-                            bool dfItem = rqitem.DefaultItem == LastOver.Prefab.Identifier;
-                            bool uiid = rqitem.UintIdentifier == LastOver.Prefab.UintIdentifier;
-                            bool match = rqitem.MatchesItem(LastOver);
-                            if (dfItem || match || uiid)
+                            bool dfItem = rqitem.DefaultItem == LastOver.Identifier;
+                            bool uiid = rqitem.UintIdentifier == LastOver.UintIdentifier;
+                            //bool match = rqitem.MatchesItem(LastOver);
+                            if (dfItem || uiid)
                                 toAdd = true;
                             if (toAdd)
                             {
@@ -419,6 +530,17 @@ namespace tooManyBaro
         }
 
         static Rectangle target_interactRect;
+
+        /// <summary>
+        /// Core function of the mod, (weird postfix with Harmony, i had nothing better).
+        /// This function is called when the user interact with an inventory, we get each slot
+        /// we check and if one slot has the mouse over then it will be true and we save the item.
+        /// </summary>
+        /// <param name="__instance"></param>
+        /// <param name="slot"></param>
+        /// <param name="slotIndex"></param>
+        /// <param name="item"></param>
+        /// <param name="isSubSlot"></param>
         public static void UpdateSlotPostfix(Inventory __instance, VisualSlot slot, int slotIndex, Barotrauma.Item item, bool isSubSlot)
         {
             // Logique à exécuter après l'appel de la méthode originale
@@ -442,7 +564,7 @@ namespace tooManyBaro
             {
                 if (searchDone)
                 {
-                    LastOver = item;
+                    LastOver = item.Prefab;
                     target_interactRect = interactRect;
                 }
             }
