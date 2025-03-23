@@ -113,9 +113,18 @@ namespace tooManyBaro
         }
     }
 
+    enum GUIToomManyBaro
+    {
+        recipes,
+        deconstructs,
+        infos
+    }
 
     class GUI
     {
+        public static bool isOpen = false;
+        public static GUIToomManyBaro menuopen = GUIToomManyBaro.recipes;
+
         private static GUILayoutGroup? frame;
         private static GUILayoutGroup? innerFrame;
         private static GUILayoutGroup? mainFrame;
@@ -133,7 +142,8 @@ namespace tooManyBaro
         /// <param name="rectTransform">main target to draw and inherit all the ui. (CharacterHUD.HUDFrame.rectTransform)</param>
         public static void Open(RectTransform rectTransform)
         {
-            Close();
+            Clear();
+            isOpen = true;
             //frame = new GUIFrame(new RectTransform(new Vector2(0.5f,0.5f), rectTransform, Anchor.Center));
             frame = new GUILayoutGroup(new RectTransform(new Vector2(0.95f, 0.9f), rectTransform, Anchor.CenterRight), childAnchor: Anchor.TopCenter);
             new GUITextBlock(new RectTransform(new Vector2(1f, 0.05f), frame.RectTransform), "Toomanybaro item craft", font: GUIStyle.SubHeadingFont)
@@ -155,11 +165,169 @@ namespace tooManyBaro
                 CanBeFocused = true
             };
 
-            var wholeframe = new GUIFrame(new RectTransform(new Vector2(1.0f, 0.65f), mainFrame.RectTransform));
-            topFrame = new GUIFrame(new RectTransform(new Vector2(1.0f, 0.9f), wholeframe.RectTransform), style: "InnerFrameDark");
+            GUIFrame wholeframe = new GUIFrame(new RectTransform(new Vector2(1.0f, 0.65f), mainFrame.RectTransform));
+            topFrame = new GUIFrame(new RectTransform(new Vector2(1.0f, 0.9f), wholeframe.RectTransform), style: "InnerFrameDark")
+            {
+                isSelected = true,
+            };
 
+            if(menuopen == GUIToomManyBaro.recipes)
+                drawRecipes(wholeframe);
+            else if(menuopen == GUIToomManyBaro.deconstructs)
+                drawDeconstruct();
+            else if (menuopen == GUIToomManyBaro.infos)
+            {
+                drawInfos();
+            }
+            else
+            {
+                drawRecipes(wholeframe);
+                menuopen = GUIToomManyBaro.recipes;
+            }
+                var rightSideButtonList = new GUIListBox(new RectTransform(new Vector2(0.16f, 1f), innerFrame.rectTransform), style: null)
+                {
+                    Spacing = 20
+                };
+            new GUIListBox(new RectTransform(new Vector2(1f, 0.4f), rightSideButtonList.Content.rectTransform), style: null);
+            new GUIButton(new RectTransform(new Vector2(1f, 0.1f), rightSideButtonList.Content.rectTransform)
+            {
+                //RelativeOffset = new Vector2(0f, 0.05f)
+            }, "Close")
+            {
+                OnClicked = (GUIButton button, object obj) =>
+                {
+                    Close();
+
+                    return true;
+                }
+            };
+
+            string textToggleDecraft = (menuopen == GUIToomManyBaro.recipes) ? "Deconstruct recipes" : "Recipes Usages";
+
+            //swap ui
+            new GUIButton(new RectTransform(new Vector2(1f, 0.1f), rightSideButtonList.Content.rectTransform)
+            {
+               //RelativeOffset = new Vector2(0.05f,0f)
+            }, textToggleDecraft)
+            {
+                OnClicked = (GUIButton button, object obj) =>
+                {
+                    if (menuopen == GUIToomManyBaro.recipes)
+                        menuopen = GUIToomManyBaro.deconstructs;
+                    else
+                        menuopen = GUIToomManyBaro.recipes;
+                    Open(CharacterHUD.HUDFrame.rectTransform);
+                    return true;
+                }
+            };
+            new GUIButton(new RectTransform(new Vector2(1f, 0.1f), rightSideButtonList.Content.rectTransform)
+            {
+                //RelativeOffset = new Vector2(0.05f,0f)
+            }, "Item infos")
+            {
+                OnClicked = (GUIButton button, object obj) =>
+                {
+                    menuopen = GUIToomManyBaro.infos;
+                    Open(CharacterHUD.HUDFrame.rectTransform);
+                    return true;
+                }
+            };
+            allGUIComponents.Add(frame);
+            allGUIComponents.Add(innerFrame);
+            allGUIComponents.Add(mainFrame);
+            allGUIComponents.Add(topFrame);
+        }
+
+        public static void drawInfos()
+        {
+            if (topFrame == null) return;
+            if (InventoryPatch.LastOver == null) return;
+
+            var infosPadded = new GUIFrame(new RectTransform(new Vector2(0.96f, 0.96f), topFrame.rectTransform, Anchor.Center), style:"itemUI");
+            var infosFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.9f, 0.9f), infosPadded.rectTransform, anchor:Anchor.Center));
+            var infosFrameVerticalSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f),infosFrame.rectTransform), style:null);
+            // TopSide Vertical split for tooltip and icon
+            var infosFrameHorizontalSplitList = new GUIListBox(new RectTransform(new Vector2(1f, 0.3f), infosFrameVerticalSplit.Content.rectTransform), isHorizontal: true, style: null)
+            {
+                Spacing = 30
+            };
+            // LEFT SIDE FOR THE ICON
+            var leftSideFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.15f, 1f), infosFrameHorizontalSplitList.Content.rectTransform));
+            new GUIImage(new RectTransform(new Vector2(1f, 1f), leftSideFrame.rectTransform, anchor:Anchor.Center), InventoryPatch.LastOver.InventoryIcon ?? InventoryPatch.LastOver.Sprite);
+            new GUIFrame(new RectTransform(new Vector2(0.01f, 0.6f), infosFrameHorizontalSplitList.Content.RectTransform), style: "VerticalLine");
+            // Right side for the tooltip
+            var rightSideFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.84f, 1f), infosFrameHorizontalSplitList.Content.rectTransform));
+            new GUITextBlock(new RectTransform(new Vector2(1f, 1f), rightSideFrame.rectTransform), RichString.Rich(InventoryPatch.LastOver.GetTooltip(Character.controlled)));
+
+            // Bottom side, diverse infos.
+
+            // Price: 
+            var priceFrame = new GUIFrame(new RectTransform(new Vector2(1f, 0.2f), infosFrameVerticalSplit.Content.rectTransform), style: null);
+            var priceFrameHorizontaleSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f), priceFrame.rectTransform), isHorizontal:true ,style:null);
+            var priceFrameBooleanVerticalSplit = new GUIListBox(new RectTransform(new Vector2(0.2f, 1f), priceFrameHorizontaleSplit.Content.rectTransform), style:null);
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(addBoolRichString(InventoryPatch.LastOver.CanBeBought, "Can be Bought :")));
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(addBoolRichString(InventoryPatch.LastOver.CanBeSold, "Can be Sold :")));
             
+            var priceFramePriceValuesVerticalSplit = new GUIListBox(new RectTransform(new Vector2(0.2f, 1f), priceFrameHorizontaleSplit.Content.rectTransform), style:null);
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Price:{InventoryPatch.LastOver.defaultPrice.Price}"));
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Buying Factor:{InventoryPatch.LastOver.defaultPrice.BuyingPriceMultiplier}x"));
+            string reputationNeeded = "";
+            string faction = FactionPrefab.Prefabs.Find(f => f.Identifier == InventoryPatch.LastOver.DefaultPrice.RequiredFaction)?.Name.ToString()??"";
+            foreach (var set in InventoryPatch.LastOver.defaultPrice.minReputation)
+            {
+                reputationNeeded += $"[‖color:{Color.Gold}‖{FactionPrefab.Prefabs.Find(f => f.Identifier == set.Key)?.Name}‖color:end‖‖color:{GUIStyle.ColorReputationVeryHigh.Value}‖{set.Value}‖color:end‖]";
+            }
+            DebugConsole.NewMessage(RichString.Rich(reputationNeeded));
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Reputation:{faction} {reputationNeeded}"));
+            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Min Price:{InventoryPatch.LastOver.GetMinPrice()}"));
 
+            //new GUITextBlock(new RectTransform(new Vector2(0.5f, 1f), priceFrame.rectTransform), RichString.Rich(priceText));
+        }
+
+        //  color symbol ‖
+        public static RichString addBoolRichString(bool B, string text = "")
+        {
+            var cfalse = GUIStyle.ColorReputationVeryLow.Value;
+            var ctrue = GUIStyle.ColorReputationVeryHigh.Value;
+            var c = B ? ctrue : cfalse;
+            var t = B ? "true" : "false";
+            return $"{text}‖color:{c}‖{t}‖color:end‖";
+        }
+
+        public static void drawDeconstruct()
+        {
+            if (topFrame == null) return;
+            var deconsFrame = new GUILayoutGroup(new RectTransform(new Vector2(1f, 1f), topFrame.RectTransform, anchor:Anchor.Center), childAnchor: Anchor.Center);
+            var producewhenDecons = InventoryPatch.ProduceWhenDeconstruct;
+            if (producewhenDecons != null && producewhenDecons.Count > 0)
+            {
+                var paddedProduceWhenDecons = new GUIListBox(new RectTransform(new Vector2(0.9f, 0.9f), deconsFrame.rectTransform), style: "ItemUI");
+                var ProduceWhenDeconsFrame = new GUIListBox(new RectTransform(new Vector2(0.9f, 0.9f), paddedProduceWhenDecons.Content.rectTransform, anchor: Anchor.Center), style: null)
+                {
+                    Spacing = 20
+                };
+                foreach (var item in producewhenDecons)
+                    if (item.AllowDeconstruct)
+                    {
+                        var il = new GUIListBox(new RectTransform(new Vector2(1f, 0.15f), ProduceWhenDeconsFrame.Content.rectTransform), style: null, isHorizontal: true);
+                        var iIcon = new GUIListBox(new RectTransform(new Vector2(0.3f, 1f), il.Content.rectTransform), style: null, isHorizontal: true);
+                        var boxItemIcon = new GUIFrame(new RectTransform(new Vector2(0.3f, 1f), iIcon.Content.rectTransform), style: "InnerGlowSmall");
+                        new GUIImage(new RectTransform(new Vector2(0.7f, 1f), iIcon.Content.rectTransform), "GUIButtonHorizontalArrow", scaleToFit:false);
+                        var boxItemIconCenter = new GUILayoutGroup(new RectTransform(new Vector2(0.9f, 0.9f), boxItemIcon.rectTransform,anchor:Anchor.Center), childAnchor: Anchor.Center);
+                        var img = new GUIImage(new RectTransform(new Vector2(1f, 1f), boxItemIconCenter.rectTransform), item.InventoryIcon ?? item.sprite)
+                        {
+                            toolTip = RichString.Rich(item.GetTooltip(Character.controlled))
+                        };
+                        imageToItem.Add((img, item));
+                        var pItems = new GUIListBox(new RectTransform(new Vector2(0.7f, 1f), il.Content.rectTransform), style: null, isHorizontal: true);
+                        AddDeconstructToList(item.DeconstructItems.ToList(), pItems.Content.rectTransform);
+                    }
+            }
+        }
+
+        public static void drawRecipes(GUIFrame wholeframe)
+        {
+            if (topFrame == null) return;
             // PRODUCERS SIDE
             itemListFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.5f, 1.0f), topFrame.RectTransform), childAnchor: Anchor.Center);
             var itemList = new GUIListBox(new RectTransform(new Vector2(1f, 0.9f), itemListFrame.RectTransform), style: null);
@@ -192,35 +360,18 @@ namespace tooManyBaro
                 isSelected = false,
                 CanBeFocused = false,
             };
+            var deconsListSub = new GUIFrame(new RectTransform(new Vector2(1f, 0.9f), deconsList.Content.rectTransform), style: null);
             allGUIComponents.Add(wholeframe);
             allGUIComponents.Add(deconsframe);
             allGUIComponents.Add(deconsList);
             //GUIListBox list = new GUIListBox(new RectTransform(new Vector2(0.95f, 0.95f), innerFrame.rectTransform, Anchor.Center), false);
             AddRecipesToListFilter(InventoryPatch.Producers, itemList.Content.rectTransform, InventoryPatch.ProduceWhenDeconstruct);
             AddRecipesToListFilter(InventoryPatch.Usages, itemListUsage.Content.rectTransform);
-            AddDeconstructToList(InventoryPatch.DeconstructItems, deconsList.Content.rectTransform);
-
-            new GUIButton(new RectTransform(new Vector2(0.1f, 0.01f), innerFrame.RectTransform, Anchor.BottomCenter)
-            {
-                RelativeOffset = new Vector2(0f, 0.05f)
-            }, "Close")
-            {
-                OnClicked = (GUIButton button, object obj) =>
-                {
-                    Close();
-
-                    return true;
-                }
-            };
-            allGUIComponents.Add(frame);
-            allGUIComponents.Add(innerFrame);
-            allGUIComponents.Add(mainFrame);
-            allGUIComponents.Add(topFrame);
+            AddDeconstructToList(InventoryPatch.DeconstructItems, deconsListSub.rectTransform);
             allGUIComponents.Add(itemListFrame);
             allGUIComponents.Add(paddedItemFrame);
             allGUIComponents.Add(usageFrame);
         }
-
 
         /// <summary>
         /// Similar to <seealso cref="AddRecipesToList(List{FabricationRecipe}, RectTransform)"/> this function 
@@ -230,15 +381,16 @@ namespace tooManyBaro
         /// <param name="rectTransform">Target to draw to.</param>
         public static void AddDeconstructToList(List<DeconstructItem> deconstructItems, RectTransform rectTransform)
         {
-            GUIListBox itemlist = new GUIListBox(new RectTransform(new Vector2(1f, 0.5f), rectTransform), isHorizontal: true);
+            GUIListBox itemlist = new GUIListBox(new RectTransform(new Vector2(1f, 1f), rectTransform), isHorizontal: true);
             foreach (var item in deconstructItems)
             {
                 var ip = (ItemPrefab)ItemPrefab.FindByIdentifier(item.ItemIdentifier);
                 var itemicon = ip.InventoryIcon;
                 if(itemicon != null)
                 {
+                    var imgFrame = new GUIFrame(new RectTransform(new Vector2(0.2f, 1f), itemlist.Content.rectTransform), style: null);
                     RichString tooltip = ((ItemPrefab)ip).GetTooltip(Character.controlled);
-                    GUIImage img = new GUIImage(new RectTransform(new Vector2(0.2f, 0.8f), itemlist.Content.rectTransform), itemicon, scaleToFit: true)
+                    GUIImage img = new GUIImage(new RectTransform(new Vector2(1f, 1f), imgFrame.rectTransform), itemicon, scaleToFit: true)
                     {
                         color = ip.SpriteColor,
                         toolTip = RichString.Rich(tooltip)
@@ -261,22 +413,6 @@ namespace tooManyBaro
             var noRecipeNeededFrame = new GUIListBox(new RectTransform(new Vector2(0.9f, 0.9f), paddednrnf.Content.rectTransform, anchor:Anchor.Center), style: null);
             AddRecipesToList((List<FabricationRecipe>)l.Where(static r => { return r.RequiresRecipe == false; }).ToList(), noRecipeNeededFrame.Content.rectTransform);
             new GUIFrame(new RectTransform(new Vector2(0.9f, 0.01f), targetRect), style: "HorizontalLine");
-
-            if(producewhenDecons != null && producewhenDecons.Count > 0)
-            {
-                //var paddedProduceWhenDecons = new GUIListBox(new RectTransform(new Vector2(1f, 0.7f), targetRect), style: "ItemUI");
-                //var ProduceWhenDeconsFrame = new GUIListBox(new RectTransform(new Vector2(0.9f, 0.9f), paddedProduceWhenDecons.Content.rectTransform, anchor: Anchor.Center), style: null);
-                //foreach(var item in producewhenDecons)
-                //    if (item.AllowDeconstruct)
-                //    {
-                //        var il = new GUIListBox(new RectTransform(new Vector2(1f, 0.1f), ProduceWhenDeconsFrame.Content.rectTransform), style: null, isHorizontal:true);
-                //        var iIcon = new GUIListBox(new RectTransform(new Vector2(0.3f, 1f), ProduceWhenDeconsFrame.Content.rectTransform), style: null, isHorizontal:true);
-                //        new GUIImage(new RectTransform(new Vector2(0.2f, 1f), iIcon.Content.rectTransform), item.InventoryIcon??item.sprite);
-                //        var pItems= new GUIListBox(new RectTransform(new Vector2(0.3f, 1f), ProduceWhenDeconsFrame.Content.rectTransform), style: null,isHorizontal:true);
-                //        AddDeconstructToList(item.DeconstructItems.ToList(), pItems.Content.rectTransform);
-                //    }
-                //new GUIFrame(new RectTransform(new Vector2(0.9f, 0.01f), targetRect), style: "HorizontalLine");
-            }
             if (lrecipeNeeded.Count <= 0) return;
             new GUITextBlock(new RectTransform(new Vector2(1f, 0.05f), targetRect), "Require a Recipe",textAlignment: Alignment.Center)
             {
@@ -310,6 +446,8 @@ namespace tooManyBaro
                 {
                     continue;
                 }
+
+                // symbole '‖'
                 GUIListBox recipeLine = new GUIListBox(new RectTransform(new Vector2(1f, 0.2f), targetRect), isHorizontal: true, style:null);
                 GUIListBox lrecipe = new GUIListBox(new RectTransform(new Vector2(0.5f, 1f), recipeLine.Content.rectTransform), isHorizontal: true, style: null);
                 GUIListBox rrecipe = new GUIListBox(new RectTransform(new Vector2(0.5f, 1f), recipeLine.Content.rectTransform), isHorizontal: true, style: null);
@@ -318,21 +456,38 @@ namespace tooManyBaro
                     var itemIcon = ip.ItemPrefabs.First().InventoryIcon ?? ip.ItemPrefabs.First().Sprite;
                     if (itemIcon != null)
                     {
-                        RichString tooltip = ip.ItemPrefabs.First().GetTooltip(Character.controlled);
-                        var img = new GUIImage(new RectTransform(new Vector2(0.2f, 1.0f), lrecipe.Content.rectTransform), itemIcon, scaleToFit: true)
+                        var itemIconframe = new GUIFrame(new RectTransform(new Vector2(0.2f, 1f), lrecipe.Content.rectTransform), style:null);
+                        GUILayoutGroup itemDeconsIconBox = new GUILayoutGroup(new RectTransform(new Vector2(1f,1f), itemIconframe.rectTransform, anchor:Anchor.Center),childAnchor:Anchor.Center);
+                        bool needCondition = false;
+                        string conditionTooltip = "";
+                        if (ip.MinCondition != ip.MaxCondition)
+                        {
+                            needCondition = true;
+                            var tColor = XMLExtensions.ToStringHex(GUIStyle.InteractionLabelColor);
+                            var cmin = getItemConditionColor(ip.MinCondition);
+                            var cmax = getItemConditionColor(ip.MaxCondition);
+                            conditionTooltip = $"‖color:{tColor}‖Item need to have condition between:‖color:end‖\n‖color:{cmin}‖{ip.MinCondition*100}‖color:end‖ - ‖color:{cmax}‖{ip.MaxCondition*100}‖color:end‖\n";
+                        }
+                        RichString tooltip = conditionTooltip+ip.ItemPrefabs.First().GetTooltip(Character.controlled);
+                        var img = new GUIImage(new RectTransform(new Vector2(1f, 1.0f), itemDeconsIconBox.rectTransform), itemIcon, scaleToFit: true)
                         {
                             Color = ip.ItemPrefabs.First().InventoryIconColor,
                             toolTip = RichString.Rich(tooltip),
                         };
                         // WRITE CONDITION OVER ITEM
-                        if (ip.MinCondition != ip.MaxCondition)
+                        if(needCondition)
                         {
                             var cmin = getItemConditionColor(ip.MinCondition);
                             var cmax = getItemConditionColor(ip.MaxCondition);
-                            new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"{ip.MinCondition * 100}", font: GUIStyle.SmallFont, textColor: cmin, textAlignment: Alignment.CenterRight);
-                            new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"{ip.MaxCondition * 100}", font: GUIStyle.SmallFont, textColor: cmax, textAlignment: Alignment.TopRight);
+                            var barFrame = new GUIFrame(new RectTransform(new Vector2(0.8f, 0.1f), itemIconframe.rectTransform,anchor:Anchor.BottomCenter),style:null);
+                            new GUIProgressBar(new RectTransform(new Vector2(1f, 1f), barFrame.rectTransform, anchor:Anchor.BottomCenter), (ip.MinCondition > ip.MaxCondition)?ip.MinCondition:ip.MaxCondition, color:cmin)
+                            {
+                                isHorizontal = true,
+                            };
+                            //new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"{ip.MinCondition * 100}", font: GUIStyle.SmallFont, textColor: cmin, textAlignment: Alignment.CenterRight);
+                            //new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"{ip.MaxCondition * 100}", font: GUIStyle.SmallFont, textColor: cmax, textAlignment: Alignment.TopRight);
                         }
-                        new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"x{ip.Amount}", textAlignment: Alignment.BottomRight);
+                        new GUITextBlock(new RectTransform(new Vector2(1f, 0.5f), itemIconframe.rectTransform, anchor: Anchor.BottomRight), $"x{ip.Amount}",textColor:GUIStyle.TextColorBright.Value);
                         imageToItem.Add((img, ip.ItemPrefabs.First()));
                     }
                 }
@@ -359,11 +514,18 @@ namespace tooManyBaro
             }
         }
 
+        public static void Close()
+        {
+            Clear();
+            isOpen = false;
+            InventoryPatch.swapSave.Clear();
+        }
+
         /// <summary>
-        /// Close the UI, we also clear all the gui component. Why ? because all the exemples i could find did something
+        /// Clear the UI, we also clear all the gui component. Why ? because all the exemples i could find did something
         /// similar and it was not working unless i do that. Breaking the order would also provoke null exception somewhere.
         /// </summary>
-        public static void Close()
+        public static void Clear()
         {
             //InventoryPatch.swapped = false;
             for (var i =0; i < allGUIComponents.Count ; i++){
@@ -386,6 +548,7 @@ namespace tooManyBaro
         /// <param name="isLeftClick">if true then it's left click that was clicked. False means right click.</param>
         public static void mouseClicked(bool isLeftClick)
         {
+            if (!isOpen) return;
             if (!isLeftClick)
             {
                 if (InventoryPatch.swapped)
@@ -410,7 +573,7 @@ namespace tooManyBaro
 
     class InventoryPatch
     {
-        static Barotrauma.ItemPrefab? LastOver = null;
+        static public Barotrauma.ItemPrefab? LastOver = null;
         static bool searchDone = true;
         static DateTime timeCallSearch = DateTime.Now;
         /// <summary>
@@ -426,7 +589,12 @@ namespace tooManyBaro
             //DebugConsole.NewMessage(text);
             bool mouseOn = target_interactRect.Contains(PlayerInput.MousePosition);
             if (mouseOn)
+            {
+                swapSave.Clear();
+                swapped = false;
+                LastOver = itemMouseHovering;
                 searchForItem();
+            }
         }
 
         public static List<Barotrauma.ItemPrefab> swapSave = new();
@@ -440,12 +608,15 @@ namespace tooManyBaro
         {
             if(LastOver != null)
             {
-                swapSave.Add(LastOver);
+                if (LastOver != i)
+                    swapSave.Add(LastOver);
+                else
+                    return;
             }
             swapped = true;
             LastOver = i;
             searchDone = false;
-            GUI.Close();
+            GUI.Clear();
             searchFabricatorRecipe();
             searchDone = true;
             GUI.Open(CharacterHUD.HUDFrame.rectTransform);
@@ -455,13 +626,15 @@ namespace tooManyBaro
         /// </summary>
         public static void unswapSubItem()
         {
-            if (swapped)
+            if (swapped && swapSave.Count > 0)
                 LastOver = swapSave.Last();
-            if(LastOver != null)
+            if(LastOver != null && swapSave.Count > 0)
                 swapSave.RemoveAt(swapSave.Count - 1);
             if (swapSave.Count == 0)
                 swapped = false;
-            GUI.Close();
+            if (LastOver == null)
+                GUI.Close();
+            GUI.Clear();
             searchFabricatorRecipe();
             searchDone = true;
             GUI.Open(CharacterHUD.HUDFrame.rectTransform);
@@ -607,6 +780,8 @@ namespace tooManyBaro
 
         static Rectangle target_interactRect;
 
+        static public Barotrauma.ItemPrefab? itemMouseHovering;
+
         /// <summary>
         /// Core function of the mod, (weird postfix with Harmony, i had nothing better).
         /// This function is called when the user interact with an inventory, we get each slot
@@ -640,7 +815,7 @@ namespace tooManyBaro
             {
                 if (searchDone)
                 {
-                    LastOver = item.Prefab;
+                    itemMouseHovering = item.Prefab;
                     target_interactRect = interactRect;
                 }
             }
