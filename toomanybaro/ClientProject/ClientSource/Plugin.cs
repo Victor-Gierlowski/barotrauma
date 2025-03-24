@@ -136,12 +136,20 @@ namespace tooManyBaro
 
         private static List<GUIComponent> allGUIComponents = new();
 
+        public static System.Timers.Timer? _Refresh_multiple_item;
+
         /// <summary>
         /// Function to open the UI. Create all the subUI and fill the frames etc..
         /// </summary>
         /// <param name="rectTransform">main target to draw and inherit all the ui. (CharacterHUD.HUDFrame.rectTransform)</param>
         public static void Open(RectTransform rectTransform)
         {
+            if(_Refresh_multiple_item == null)
+            {
+                _Refresh_multiple_item = new System.Timers.Timer(2000);
+                _Refresh_multiple_item.Elapsed += refreshMultipleRequired;
+                _Refresh_multiple_item.AutoReset = true;
+            }
             Clear();
             isOpen = true;
             //frame = new GUIFrame(new RectTransform(new Vector2(0.5f,0.5f), rectTransform, Anchor.Center));
@@ -236,6 +244,7 @@ namespace tooManyBaro
             allGUIComponents.Add(innerFrame);
             allGUIComponents.Add(mainFrame);
             allGUIComponents.Add(topFrame);
+            _Refresh_multiple_item.Start();
         }
 
         public static void drawInfos()
@@ -245,9 +254,12 @@ namespace tooManyBaro
 
             var infosPadded = new GUIFrame(new RectTransform(new Vector2(0.96f, 0.96f), topFrame.rectTransform, Anchor.Center), style:"itemUI");
             var infosFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.9f, 0.9f), infosPadded.rectTransform, anchor:Anchor.Center));
-            var infosFrameVerticalSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f),infosFrame.rectTransform), style:null);
+            var infosFrameVerticalSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f),infosFrame.rectTransform), style: null)
+            {
+                Spacing = 40,
+            };
             // TopSide Vertical split for tooltip and icon
-            var infosFrameHorizontalSplitList = new GUIListBox(new RectTransform(new Vector2(1f, 0.3f), infosFrameVerticalSplit.Content.rectTransform), isHorizontal: true, style: null)
+            var infosFrameHorizontalSplitList = new GUIListBox(new RectTransform(new Vector2(0.9f, 0.5f), infosFrameVerticalSplit.Content.rectTransform), isHorizontal: true, style: null)
             {
                 Spacing = 30
             };
@@ -256,33 +268,108 @@ namespace tooManyBaro
             new GUIImage(new RectTransform(new Vector2(1f, 1f), leftSideFrame.rectTransform, anchor:Anchor.Center), InventoryPatch.LastOver.InventoryIcon ?? InventoryPatch.LastOver.Sprite);
             new GUIFrame(new RectTransform(new Vector2(0.01f, 0.6f), infosFrameHorizontalSplitList.Content.RectTransform), style: "VerticalLine");
             // Right side for the tooltip
-            var rightSideFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.84f, 1f), infosFrameHorizontalSplitList.Content.rectTransform));
+            var rightSideFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.8f, 1f), infosFrameHorizontalSplitList.Content.rectTransform));
             new GUITextBlock(new RectTransform(new Vector2(1f, 1f), rightSideFrame.rectTransform), RichString.Rich(InventoryPatch.LastOver.GetTooltip(Character.controlled)));
 
             // Bottom side, diverse infos.
 
             // Price: 
-            var priceFrame = new GUIFrame(new RectTransform(new Vector2(1f, 0.2f), infosFrameVerticalSplit.Content.rectTransform), style: null);
+            var priceFrame = new GUIFrame(new RectTransform(new Vector2(1f, 0.4f), infosFrameVerticalSplit.Content.rectTransform), style: null);
             var priceFrameHorizontaleSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f), priceFrame.rectTransform), isHorizontal:true ,style:null);
-            var priceFrameBooleanVerticalSplit = new GUIListBox(new RectTransform(new Vector2(0.2f, 1f), priceFrameHorizontaleSplit.Content.rectTransform), style:null);
-            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(addBoolRichString(InventoryPatch.LastOver.CanBeBought, "Can be Bought :")));
-            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(addBoolRichString(InventoryPatch.LastOver.CanBeSold, "Can be Sold :")));
-            
-            var priceFramePriceValuesVerticalSplit = new GUIListBox(new RectTransform(new Vector2(0.2f, 1f), priceFrameHorizontaleSplit.Content.rectTransform), style:null);
-            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Price:{InventoryPatch.LastOver.defaultPrice.Price}"));
-            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Buying Factor:{InventoryPatch.LastOver.defaultPrice.BuyingPriceMultiplier}x"));
+            var priceFrameBooleanVerticalSplit = new GUIListBox(new RectTransform(new Vector2(0.3f, 1f), priceFrameHorizontaleSplit.Content.rectTransform), style:null)
+            {
+                Spacing = 20
+            };
+            //new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(addBoolRichString(InventoryPatch.LastOver.CanBeBought, "Can be Bought :")))
+            //{
+            //    Font=GUIStyle.LargeFont
+            //};
+            //new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(addBoolRichString(InventoryPatch.LastOver.CanBeSold, "Can be Sold :")))
+            //{
+            //    Font = GUIStyle.LargeFont
+            //}; ;
+            //new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(addBoolRichString(InventoryPatch.LastOver.DefaultPrice.RequiresUnlock, "Need unlock:")))
+            //{
+            //    Font = GUIStyle.LargeFont
+            //}; ;
+            //new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(addBoolRichString(InventoryPatch.LastOver.CanCharacterBuy(), "Could you buy:")))
+            //{
+            //    Font = GUIStyle.LargeFont
+            //}; ;
+
+            var priceFramePriceValuesVerticalSplit = new GUIListBox(new RectTransform(new Vector2(0.3f, 1f), priceFrameHorizontaleSplit.Content.rectTransform), style: null)
+            {
+                Spacing = 20
+            };
+
             string reputationNeeded = "";
             string faction = FactionPrefab.Prefabs.Find(f => f.Identifier == InventoryPatch.LastOver.DefaultPrice.RequiredFaction)?.Name.ToString()??"";
             foreach (var set in InventoryPatch.LastOver.defaultPrice.minReputation)
             {
                 reputationNeeded += $"[‖color:{Color.Gold}‖{FactionPrefab.Prefabs.Find(f => f.Identifier == set.Key)?.Name}‖color:end‖‖color:{GUIStyle.ColorReputationVeryHigh.Value}‖{set.Value}‖color:end‖]";
             }
-            DebugConsole.NewMessage(RichString.Rich(reputationNeeded));
-            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Reputation:{faction} {reputationNeeded}"));
-            new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Min Price:{InventoryPatch.LastOver.GetMinPrice()}"));
+
+            List<(String, String)> allTexts = new();
+            int bigger = 0;
+            void newText((string, string) t){
+                if(t.Item1.Length > bigger) bigger = t.Item1.Length;
+                allTexts.Add(t);
+            }
+            newText(("Can be Bought",addBoolRichString(InventoryPatch.LastOver.CanBeBought).ToString()));
+            newText(("Can be Sold",addBoolRichString(InventoryPatch.LastOver.CanBeSold).ToString()));
+            newText(("Need unlock",addBoolRichString(InventoryPatch.LastOver.DefaultPrice.RequiresUnlock).ToString()));
+            newText(("Could you buy",addBoolRichString(InventoryPatch.LastOver.CanCharacterBuy() && InventoryPatch.LastOver.CanBeBought).ToString()));
+
+            foreach (var tuple in allTexts)
+            {
+                String id = string.Concat(tuple.Item1, string.Concat(Enumerable.Repeat(" ", (bigger - tuple.Item1.Length))));
+                RichString text = $"{id}: ‖color:{Color.Gold}‖{tuple.Item2}‖color:end‖";
+                new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFrameBooleanVerticalSplit.Content.rectTransform), RichString.Rich(text))
+                {
+                    CanBeFocused = false,
+                    Font = GUIStyle.MonospacedFont,
+                    TextSize = new Vector2(3f, 3f)
+                };
+            }
+            bigger = 0;
+            allTexts.Clear();
+            newText(("Price", $"{InventoryPatch.LastOver.defaultPrice.Price}"));
+            newText(("Buying Factor", $"{InventoryPatch.LastOver.defaultPrice.BuyingPriceMultiplier}x"));
+            newText(("Min Price", $"{InventoryPatch.LastOver.GetMinPrice()}"));
+            newText(("Reputation", $"{faction} {reputationNeeded}"));
+            foreach (var tuple in allTexts){
+                String id = string.Concat(tuple.Item1,string.Concat(Enumerable.Repeat(" ",(bigger - tuple.Item1.Length))));
+                RichString text = $"{id}: ‖color:{Color.Gold}‖{tuple.Item2}‖color:end‖";
+                new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich(text))
+                {
+                    CanBeFocused=false,
+                    Font = GUIStyle.MonospacedFont,
+                    TextSize = new Vector2(3f, 3f)
+                }; 
+            }           
+            // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Price:{InventoryPatch.LastOver.defaultPrice.Price}"))
+            // {
+            //     Font = GUIStyle.LargeFont
+            // };
+            // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Buying Factor:{InventoryPatch.LastOver.defaultPrice.BuyingPriceMultiplier}x"))
+            // {
+            //     Font = GUIStyle.LargeFont
+            // };
+            
+
+            //DebugConsole.NewMessage(RichString.Rich(reputationNeeded));
+            // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Min Price:{InventoryPatch.LastOver.GetMinPrice()}"))
+            // {
+            //     Font = GUIStyle.LargeFont
+            // };
+            // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Reputation:{faction} {reputationNeeded}"))
+            // {
+            //     Font = GUIStyle.LargeFont
+            // };
 
             //new GUITextBlock(new RectTransform(new Vector2(0.5f, 1f), priceFrame.rectTransform), RichString.Rich(priceText));
         }
+
 
         //  color symbol ‖
         public static RichString addBoolRichString(bool B, string text = "")
@@ -453,27 +540,44 @@ namespace tooManyBaro
                 GUIListBox rrecipe = new GUIListBox(new RectTransform(new Vector2(0.5f, 1f), recipeLine.Content.rectTransform), isHorizontal: true, style: null);
                 foreach (FabricationRecipe.RequiredItem ip in recipe.RequiredItems)
                 {
-                    var itemIcon = ip.ItemPrefabs.First().InventoryIcon ?? ip.ItemPrefabs.First().Sprite;
+                    ItemPrefab? curr_item_draw = null;
+                    bool needToBeSwap = false;
+                    float iconAlpha = 1f ;
+                    if (ip.ItemPrefabs.Multiple())
+                    {
+                        needToBeSwap = true;
+                        curr_item_draw = ip.ItemPrefabs.FirstOrDefault();
+                        float iconCycleSpeed = 0.75f;
+                        float iconCycleT = (float)Timing.TotalTime * iconCycleSpeed;
+                        int iconIndex = (int)(iconCycleT % ip.ItemPrefabs.Count());
+
+                        iconAlpha = Math.Min(Math.Abs(MathF.Sin(iconCycleT * MathHelper.Pi)) * 2.0f, 1.0f);
+                    }
+                    else
+                    {
+                        curr_item_draw = ip.ItemPrefabs.FirstOrDefault();
+                    }
+                    if (curr_item_draw == null) continue;
+                    var itemIcon = curr_item_draw.InventoryIcon ?? curr_item_draw.Sprite;
                     if (itemIcon != null)
                     {
                         var itemIconframe = new GUIFrame(new RectTransform(new Vector2(0.2f, 1f), lrecipe.Content.rectTransform), style:null);
                         GUILayoutGroup itemDeconsIconBox = new GUILayoutGroup(new RectTransform(new Vector2(1f,1f), itemIconframe.rectTransform, anchor:Anchor.Center),childAnchor:Anchor.Center);
-                        bool needCondition = false;
-                        string conditionTooltip = "";
-                        if (ip.MinCondition != ip.MaxCondition)
-                        {
-                            needCondition = true;
-                            var tColor = XMLExtensions.ToStringHex(GUIStyle.InteractionLabelColor);
-                            var cmin = getItemConditionColor(ip.MinCondition);
-                            var cmax = getItemConditionColor(ip.MaxCondition);
-                            conditionTooltip = $"‖color:{tColor}‖Item need to have condition between:‖color:end‖\n‖color:{cmin}‖{ip.MinCondition*100}‖color:end‖ - ‖color:{cmax}‖{ip.MaxCondition*100}‖color:end‖\n";
-                        }
-                        RichString tooltip = conditionTooltip+ip.ItemPrefabs.First().GetTooltip(Character.controlled);
+
+
+                        // ITEM CONDITION CHECKING
+                        // drawing after to not be under the item.
+                        String conditionTooltip = getConditionTooltip(ip);
+                        bool needCondition = conditionTooltip.Length > 0;
+                        
+                        RichString tooltip = conditionTooltip+ curr_item_draw.GetTooltip(Character.controlled);
                         var img = new GUIImage(new RectTransform(new Vector2(1f, 1.0f), itemDeconsIconBox.rectTransform), itemIcon, scaleToFit: true)
                         {
-                            Color = ip.ItemPrefabs.First().InventoryIconColor,
+                            Color = curr_item_draw.InventoryIconColor,
                             toolTip = RichString.Rich(tooltip),
                         };
+                        if(needToBeSwap)
+                            item_swap_over_time.Add((img,ip));
                         // WRITE CONDITION OVER ITEM
                         if(needCondition)
                         {
@@ -483,12 +587,16 @@ namespace tooManyBaro
                             new GUIProgressBar(new RectTransform(new Vector2(1f, 1f), barFrame.rectTransform, anchor:Anchor.BottomCenter), (ip.MinCondition > ip.MaxCondition)?ip.MinCondition:ip.MaxCondition, color:cmin)
                             {
                                 isHorizontal = true,
+                                CanBeFocused = false,
                             };
                             //new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"{ip.MinCondition * 100}", font: GUIStyle.SmallFont, textColor: cmin, textAlignment: Alignment.CenterRight);
                             //new GUITextBlock(new RectTransform(new Vector2(0f, 1f), lrecipe.Content.rectTransform), $"{ip.MaxCondition * 100}", font: GUIStyle.SmallFont, textColor: cmax, textAlignment: Alignment.TopRight);
                         }
-                        new GUITextBlock(new RectTransform(new Vector2(1f, 0.5f), itemIconframe.rectTransform, anchor: Anchor.BottomRight), $"x{ip.Amount}",textColor:GUIStyle.TextColorBright.Value);
-                        imageToItem.Add((img, ip.ItemPrefabs.First()));
+                        new GUITextBlock(new RectTransform(new Vector2(1f, 0.2f), itemIconframe.rectTransform, anchor: Anchor.BottomRight), $"x{ip.Amount}", textColor: GUIStyle.TextColorBright.Value)
+                        {
+                            CanBeFocused=false,
+                        };
+                        imageToItem.Add((img, curr_item_draw));
                     }
                 }
                 var outputIcon = recipe.TargetItem.InventoryIcon ?? recipe.TargetItem.Sprite;
@@ -513,6 +621,42 @@ namespace tooManyBaro
                 allGUIComponents.Add(rrecipe);
             }
         }
+        static public String getConditionTooltip(RequiredItem ip)
+        {
+            string conditionTooltip = "";
+            if (ip.MinCondition != ip.MaxCondition)
+            {
+                var tColor = XMLExtensions.ToStringHex(GUIStyle.InteractionLabelColor);
+                var cmin = getItemConditionColor(ip.MinCondition);
+                var cmax = getItemConditionColor(ip.MaxCondition);
+                conditionTooltip = $"‖color:{tColor}‖Item need to have condition between:‖color:end‖\n‖color:{cmin}‖{ip.MinCondition * 100}‖color:end‖ - ‖color:{cmax}‖{ip.MaxCondition * 100}‖color:end‖\n";
+            }
+            return conditionTooltip;
+        }
+
+        static public List<(GUIImage,RequiredItem)> item_swap_over_time = new();
+
+        static int _refreshIconIndex = 0;
+        static public void refreshMultipleRequired(Object source, ElapsedEventArgs e)
+        {
+            _refreshIconIndex++;
+            if (item_swap_over_time.Count > 0)
+            {
+                foreach(var tuple in item_swap_over_time)
+                {
+                    int iconIndex = (int)(_refreshIconIndex % tuple.Item2.ItemPrefabs.Count());
+
+                    var requiredItemToDisplay = tuple.Item2.ItemPrefabs.Skip(iconIndex).FirstOrDefault();
+                    var img = requiredItemToDisplay?.InventoryIcon ?? requiredItemToDisplay?.Sprite;
+                    if(requiredItemToDisplay != null && img != null)
+                    {
+                        tuple.Item1.UserData = requiredItemToDisplay;
+                        tuple.Item1.toolTip = RichString.Rich(getConditionTooltip(tuple.Item2)+ requiredItemToDisplay.GetTooltip(Character.controlled));
+                        tuple.Item1.Sprite = img;
+                    }
+                }
+            }
+        }
 
         public static void Close()
         {
@@ -527,6 +671,8 @@ namespace tooManyBaro
         /// </summary>
         public static void Clear()
         {
+            _Refresh_multiple_item?.Stop();
+            item_swap_over_time.Clear();
             //InventoryPatch.swapped = false;
             for (var i =0; i < allGUIComponents.Count ; i++){
                 GUIComponent comp = allGUIComponents.ElementAt(i);
@@ -562,7 +708,7 @@ namespace tooManyBaro
             {
                 if (comp.Item1.rectTransform.Rect.Contains(PlayerInput.MousePosition))
                 {
-                    toswapto = comp.Item2;
+                    toswapto = ((ItemPrefab)comp.Item1.UserData) ?? comp.Item2;
                     break;
                 }
             }
@@ -821,6 +967,8 @@ namespace tooManyBaro
             }
         }
     }
+
+
 
 
 
