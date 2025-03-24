@@ -259,7 +259,7 @@ namespace tooManyBaro
                 Spacing = 40,
             };
             // TopSide Vertical split for tooltip and icon
-            var infosFrameHorizontalSplitList = new GUIListBox(new RectTransform(new Vector2(0.9f, 0.5f), infosFrameVerticalSplit.Content.rectTransform), isHorizontal: true, style: null)
+            var infosFrameHorizontalSplitList = new GUIListBox(new RectTransform(new Vector2(1f, 0.4f), infosFrameVerticalSplit.Content.rectTransform), isHorizontal: true, style: null)
             {
                 Spacing = 30
             };
@@ -268,7 +268,7 @@ namespace tooManyBaro
             new GUIImage(new RectTransform(new Vector2(1f, 1f), leftSideFrame.rectTransform, anchor:Anchor.Center), InventoryPatch.LastOver.InventoryIcon ?? InventoryPatch.LastOver.Sprite);
             new GUIFrame(new RectTransform(new Vector2(0.01f, 0.6f), infosFrameHorizontalSplitList.Content.RectTransform), style: "VerticalLine");
             // Right side for the tooltip
-            var rightSideFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.8f, 1f), infosFrameHorizontalSplitList.Content.rectTransform));
+            var rightSideFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.6f, 1f), infosFrameHorizontalSplitList.Content.rectTransform));
             new GUITextBlock(new RectTransform(new Vector2(1f, 1f), rightSideFrame.rectTransform), RichString.Rich(InventoryPatch.LastOver.GetTooltip(Character.controlled)));
 
             // Bottom side, diverse infos.
@@ -304,8 +304,10 @@ namespace tooManyBaro
 
             string reputationNeeded = "";
             string faction = FactionPrefab.Prefabs.Find(f => f.Identifier == InventoryPatch.LastOver.DefaultPrice.RequiredFaction)?.Name.ToString()??"";
-            foreach (var set in InventoryPatch.LastOver.defaultPrice.minReputation)
+            //InventoryPatch.LastOver.DefaultPrice.reputation
+            foreach (var set in InventoryPatch.LastOver.DefaultPrice.MinReputation)
             {
+                DebugConsole.NewMessage($" (( {set.Value} {set.Key}");
                 reputationNeeded += $"[‖color:{Color.Gold}‖{FactionPrefab.Prefabs.Find(f => f.Identifier == set.Key)?.Name}‖color:end‖‖color:{GUIStyle.ColorReputationVeryHigh.Value}‖{set.Value}‖color:end‖]";
             }
 
@@ -336,7 +338,7 @@ namespace tooManyBaro
             newText(("Price", $"{InventoryPatch.LastOver.defaultPrice.Price}"));
             newText(("Buying Factor", $"{InventoryPatch.LastOver.defaultPrice.BuyingPriceMultiplier}x"));
             newText(("Min Price", $"{InventoryPatch.LastOver.GetMinPrice()}"));
-            newText(("Reputation", $"{faction} {reputationNeeded}"));
+            newText(("Faction", $"{faction} {reputationNeeded}"));
             foreach (var tuple in allTexts){
                 String id = string.Concat(tuple.Item1,string.Concat(Enumerable.Repeat(" ",(bigger - tuple.Item1.Length))));
                 RichString text = $"{id}: ‖color:{Color.Gold}‖{tuple.Item2}‖color:end‖";
