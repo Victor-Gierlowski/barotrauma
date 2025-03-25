@@ -319,10 +319,8 @@ namespace tooManyBaro
                         reput = b.Value;
                         DebugConsole.NewMessage($"va {b.Value} - kb {b.Key.ToString()}");
                     }
-                    //marchant =  GameMain.Client.;
                 }
-            //DebugConsole.NewMessage($"{reput} - > {a.Key.ToString()}");
-            //DebugConsole.NewMessage($"==> {InventoryPatch.LastOver.StorePrices.Count}");
+
             foreach (var a in InventoryPatch.LastOver.StorePrices)
             {
                 if (a.Value.MinReputation.Any())
@@ -338,10 +336,8 @@ namespace tooManyBaro
                         }
                         DebugConsole.NewMessage($"v {b.Value} - k {b.Key.ToString()}");
                     }
-                    //marchant =  GameMain.Client.;
                 }
             }
-            //if (reput == -1) reput = InventoryPatch.LastOver.DefaultPrice.MinLevelDifficulty;
             if(reput!=-1)
                 reputationNeeded += $"[‖color:{GUIStyle.ColorReputationVeryHigh.Value}‖{reput}‖color:end‖]";
 
@@ -415,10 +411,6 @@ namespace tooManyBaro
                     }
 
                 }
-                //DebugConsole.NewMessage(merchant);
-                //DebugConsole.NewMessage(TextManager.Get($"storename.{store.Key}"));
-                //DebugConsole.NewMessage(TextManager.Get("store"));
-                //DebugConsole.NewMessage(TextManager.Get($"{store.Key}"));
                 var textValue = $"{p} {prices.BuyingPriceMultiplier}x {reputation}";
                 newText((merchant, textValue));
             }
@@ -434,27 +426,6 @@ namespace tooManyBaro
                 };
             }
             
-            // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Price:{InventoryPatch.LastOver.defaultPrice.Price}"))
-            // {
-            //     Font = GUIStyle.LargeFont
-            // };
-            // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Buying Factor:{InventoryPatch.LastOver.defaultPrice.BuyingPriceMultiplier}x"))
-            // {
-            //     Font = GUIStyle.LargeFont
-            // };
-
-
-            //DebugConsole.NewMessage(RichString.Rich(reputationNeeded));
-            // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Min Price:{InventoryPatch.LastOver.GetMinPrice()}"))
-            // {
-            //     Font = GUIStyle.LargeFont
-            // };
-            // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Reputation:{faction} {reputationNeeded}"))
-            // {
-            //     Font = GUIStyle.LargeFont
-            // };
-
-            //new GUITextBlock(new RectTransform(new Vector2(0.5f, 1f), priceFrame.rectTransform), RichString.Rich(priceText));
         }
 
 
@@ -486,7 +457,8 @@ namespace tooManyBaro
                         var il = new GUIListBox(new RectTransform(new Vector2(1f, 0.15f), ProduceWhenDeconsFrame.Content.rectTransform), style: null, isHorizontal: true);
                         var iIcon = new GUIListBox(new RectTransform(new Vector2(0.3f, 1f), il.Content.rectTransform), style: null, isHorizontal: true);
                         var boxItemIcon = new GUIFrame(new RectTransform(new Vector2(0.3f, 1f), iIcon.Content.rectTransform), style: "InnerGlowSmall");
-                        new GUIImage(new RectTransform(new Vector2(0.7f, 1f), iIcon.Content.rectTransform), "GUIButtonHorizontalArrow", scaleToFit:false);
+                        var arrowFrame = new GUIFrame(new RectTransform(new Vector2(0.7f, 1f), iIcon.Content.RectTransform), style: null);
+                        new GUIImage(new RectTransform(new Vector2(0.3f, 0.5f), arrowFrame.rectTransform,anchor:Anchor.Center), "GUIButtonHorizontalArrow", scaleToFit:false);
                         var boxItemIconCenter = new GUILayoutGroup(new RectTransform(new Vector2(0.9f, 0.9f), boxItemIcon.rectTransform,anchor:Anchor.Center), childAnchor: Anchor.Center);
                         var img = new GUIImage(new RectTransform(new Vector2(1f, 1f), boxItemIconCenter.rectTransform), item.InventoryIcon ?? item.sprite)
                         {
