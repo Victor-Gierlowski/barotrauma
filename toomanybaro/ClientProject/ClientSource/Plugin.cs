@@ -301,15 +301,49 @@ namespace tooManyBaro
             {
                 Spacing = 20
             };
-
+            var pricePerMerchantFramePriceValuesVerticalSplit = new GUIListBox(new RectTransform(new Vector2(0.3f, 1f), priceFrameHorizontaleSplit.Content.rectTransform), style: null)
+            {
+                Spacing = 20
+            };
             string reputationNeeded = "";
             string faction = FactionPrefab.Prefabs.Find(f => f.Identifier == InventoryPatch.LastOver.DefaultPrice.RequiredFaction)?.Name.ToString()??"";
-            //InventoryPatch.LastOver.DefaultPrice.reputation
-            foreach (var set in InventoryPatch.LastOver.DefaultPrice.MinReputation)
+
+            float reput = -1;
+            //string marchant = "";
+            var e = InventoryPatch.LastOver.DefaultPrice;
+                if (e.MinReputation.Any())
+                {
+                    foreach (var b in e.MinReputation)
+                    {
+
+                        reput = b.Value;
+                        DebugConsole.NewMessage($"va {b.Value} - kb {b.Key.ToString()}");
+                    }
+                    //marchant =  GameMain.Client.;
+                }
+            //DebugConsole.NewMessage($"{reput} - > {a.Key.ToString()}");
+            //DebugConsole.NewMessage($"==> {InventoryPatch.LastOver.StorePrices.Count}");
+            foreach (var a in InventoryPatch.LastOver.StorePrices)
             {
-                DebugConsole.NewMessage($" (( {set.Value} {set.Key}");
-                reputationNeeded += $"[‖color:{Color.Gold}‖{FactionPrefab.Prefabs.Find(f => f.Identifier == set.Key)?.Name}‖color:end‖‖color:{GUIStyle.ColorReputationVeryHigh.Value}‖{set.Value}‖color:end‖]";
+                if (a.Value.MinReputation.Any())
+                {
+                    foreach(var b in a.Value.MinReputation)
+                    {
+
+                        reput = b.Value;
+                        var f = FactionPrefab.Prefabs.Find(pf => pf.Identifier == b.Key);
+                        if (f != null)
+                        {
+                            faction = f.Name.Value;
+                        }
+                        DebugConsole.NewMessage($"v {b.Value} - k {b.Key.ToString()}");
+                    }
+                    //marchant =  GameMain.Client.;
+                }
             }
+            //if (reput == -1) reput = InventoryPatch.LastOver.DefaultPrice.MinLevelDifficulty;
+            if(reput!=-1)
+                reputationNeeded += $"[‖color:{GUIStyle.ColorReputationVeryHigh.Value}‖{reput}‖color:end‖]";
 
             List<(String, String)> allTexts = new();
             int bigger = 0;
@@ -338,7 +372,8 @@ namespace tooManyBaro
             newText(("Price", $"{InventoryPatch.LastOver.defaultPrice.Price}"));
             newText(("Buying Factor", $"{InventoryPatch.LastOver.defaultPrice.BuyingPriceMultiplier}x"));
             newText(("Min Price", $"{InventoryPatch.LastOver.GetMinPrice()}"));
-            newText(("Faction", $"{faction} {reputationNeeded}"));
+            newText(("faction", $"{faction}"));
+            newText(("Reputation", $"{reputationNeeded}"));
             foreach (var tuple in allTexts){
                 String id = string.Concat(tuple.Item1,string.Concat(Enumerable.Repeat(" ",(bigger - tuple.Item1.Length))));
                 RichString text = $"{id}: ‖color:{Color.Gold}‖{tuple.Item2}‖color:end‖";
@@ -348,7 +383,57 @@ namespace tooManyBaro
                     Font = GUIStyle.MonospacedFont,
                     TextSize = new Vector2(3f, 3f)
                 }; 
-            }           
+            }
+
+            allTexts.Clear();
+            foreach(var store in InventoryPatch.LastOver.StorePrices)
+            {
+                var prices = store.Value;
+                if (!prices.CanBeBought) continue;
+                string p =$"{prices.Price}$";
+                var el = MapEntityPrefab.FindByIdentifier(store.Key);
+                CharacterPrefab.Prefabs.Any(cp => cp.Identifier == store.Key);
+                if (el != null)
+                {
+                    DebugConsole.NewMessage($"found and {el.Category.ToString()}");
+                }
+                string reputation = (prices.MinReputation.Any()) ? $"{prices.MinReputation.FirstOrDefault().Value}" : "";
+                var merchant = TextManager.Get($"storename.{store.Key}").Value;
+                if(merchant.Length == 0)
+                {
+                    merchant = TextManager.Get($"{store.Key}").Value;
+                    if(merchant.Length == 0)
+                    {
+                        merchant = TextManager.Get("store").Value;
+                        var typename = store.Key.ToString().Split("merchant")[1];
+                        var lt = LocationType.Prefabs.Find(p => (p.Identifier == store.Key || p.Identifier == typename));
+                        if (lt != null)
+                        {
+                            merchant = lt.Name.Value;
+                        }
+                        //DebugConsole.NewMessage($"Nothing else than store type:{typename} {a}");
+                    }
+
+                }
+                //DebugConsole.NewMessage(merchant);
+                //DebugConsole.NewMessage(TextManager.Get($"storename.{store.Key}"));
+                //DebugConsole.NewMessage(TextManager.Get("store"));
+                //DebugConsole.NewMessage(TextManager.Get($"{store.Key}"));
+                var textValue = $"{p} {prices.BuyingPriceMultiplier}x {reputation}";
+                newText((merchant, textValue));
+            }
+            foreach (var tuple in allTexts)
+            {
+                String id = string.Concat(tuple.Item1, string.Concat(Enumerable.Repeat(" ", (bigger - tuple.Item1.Length))));
+                RichString text = $"{id}: ‖color:{Color.Gold}‖{tuple.Item2}‖color:end‖";
+                new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), pricePerMerchantFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich(text))
+                {
+                    CanBeFocused = false,
+                    Font = GUIStyle.MonospacedFont,
+                    TextSize = new Vector2(3f, 3f)
+                };
+            }
+            
             // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Price:{InventoryPatch.LastOver.defaultPrice.Price}"))
             // {
             //     Font = GUIStyle.LargeFont
@@ -357,7 +442,7 @@ namespace tooManyBaro
             // {
             //     Font = GUIStyle.LargeFont
             // };
-            
+
 
             //DebugConsole.NewMessage(RichString.Rich(reputationNeeded));
             // new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich($"Min Price:{InventoryPatch.LastOver.GetMinPrice()}"))
