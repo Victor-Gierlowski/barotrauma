@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <contentpackage name="toomanybaro" modversion="2.2" corepackage="false">
+	<Text file="%ModDir%/Content/Texts/EnglishVanilla.xml" />
+	<Text file="%ModDir%/Content/Texts/FrenchVanilla.xml" />
+	<Text file="%ModDir%/Content/Options/default_options.xml" />
 </contentpackage>

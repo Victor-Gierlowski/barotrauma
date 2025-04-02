@@ -1,0 +1,3 @@
+<config>
+	<GUI refresh_time="2000" reopen_recipes_after_close="false"/>
+</config>

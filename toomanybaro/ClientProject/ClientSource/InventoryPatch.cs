@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Barotrauma;
 using Barotrauma.Extensions;
@@ -11,6 +12,8 @@ namespace tooManyBaro.ClientSource
 {
     class InventoryPatch
     {
+
+        static public List<Barotrauma.ItemPrefab> resultOfSearch = new List<ItemPrefab>();
         static public Barotrauma.ItemPrefab? LastOver = null;
         static bool searchDone = true;
         static DateTime timeCallSearch = DateTime.Now;
@@ -209,6 +212,23 @@ namespace tooManyBaro.ClientSource
                 //printFabricatorProducer();
                 //printFabricatorUsages();
             }
+        }
+
+        /// <summary>
+        /// Looks for item that contain the string passed in argument.
+        /// </summary>
+        /// <param name="name">regex element to search for</param>
+        static public void searchItemWithString(string name)
+        {
+            resultOfSearch.Clear();
+            foreach (var item in ItemPrefab.Prefabs)
+            {
+                if(item.Name.Contains(name))
+                    resultOfSearch.Add(item);
+
+                    //if (Regex.IsMatch(item.name.Value, name))
+            }
+            return;
         }
 
         static Rectangle target_interactRect;

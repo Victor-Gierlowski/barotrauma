@@ -52,32 +52,25 @@ namespace tooManyBaro
                 postfix: new HarmonyMethod(typeof(tooManyBaro.ClientSource.KeyBoardInput).GetMethod("onUpdateKeys"))
                 );
             Barotrauma.DebugConsole.NewMessage("Loaded updateKeys Settings Menu", Color.Gold);
+
+
+            Barotrauma.DebugConsole.NewMessage("Loading Custom Options");
+            try
+            {
+                tooManyBaro.ClientSource.Options.loadOptions();
+            }
+            catch (Exception ex)
+            {
+                DebugConsole.NewMessage($"{ex.Message} {ex.StackTrace}",color:Color.OrangeRed);
+            }
         }
         public void OnLoadCompleted() {
             foreach (ItemPrefab iprefab in ItemPrefab.Prefabs)
             {
-
-                //string textdec = "";
-                //if (iprefab.AllowDeconstruct)
-                //{
-                //    textdec += $"{iprefab.Name} will produce upon deconstruction : ";
-                //    foreach (var item in iprefab.DeconstructItems)
-                //    {
-                //        textdec += $" {ItemPrefab.FindByIdentifier(item.ItemIdentifier).Name}x{item.Amount} ; ";
-                //    }
-                //    textdec += "\n";
-                //}
-                //DebugConsole.NewMessage(textdec,Color.Snow);
                 foreach(FabricationRecipe recipe in iprefab.FabricationRecipes.Values)
                     tooManyBaro.ClientSource.InventoryPatch.allRecipes.Add(recipe);
                 
             }
-            //var col = GUIComponentStyle;
-            //DebugConsole.NewMessage($"il y'a {col.Count()} styles");
-            //foreach(var i in col)
-            //{
-            //    DebugConsole.NewMessage($"{i.Name} - {i.ToString()}\n");
-            //}
         }
         public void PreInitPatching() { }
         public void Dispose()
@@ -85,15 +78,5 @@ namespace tooManyBaro
             harmony.UnpatchAll();
             harmony = null;
         }
-
     }
-    
-
-    
-    
-    
-
-
-
-
 }

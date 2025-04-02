@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<infotexts language="English" nowhitespace="false">
+  <TooManyBaro.options.name.refreshtime>Refresh timer for sub ingredients</TooManyBaro.options.name.refreshtime>
+  <TooManyBaro.options.tooltip.refreshtime>Timer in milliseconds to refresh the ingredients shown in the recipes when there is multiples subrecipes</TooManyBaro.options.tooltip.refreshtime>
+  <TooManyBaro.options.name.reopenrecipes>Reopen recipes after closing HUD?</TooManyBaro.options.name.reopenrecipes>
+    <TooManyBaro.options.tooltip.reopenrecipes>Check if you want the UI to automatically reopen the recipes as the first tab after you close it.
+    When it's not check, when you press O the UI will open on the last tab open.</TooManyBaro.options.tooltip.reopenrecipes>
+
+</infotexts>

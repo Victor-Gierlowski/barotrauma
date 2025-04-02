@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<infotexts language="French" nowhitespace="false" translatedname="Français">
+  <TooManyBaro.options.name.refreshtime>Vitesse rafraîchissement sous-ingrédients</TooManyBaro.options.name.refreshtime>
+  <TooManyBaro.options.tooltip.refreshtime>Temps en millisecondes avant l'actualisation des ingrédients dans les recettes qui acceptent plusieurs ingrédients comme remplacement.</TooManyBaro.options.tooltip.refreshtime>
+  <TooManyBaro.options.name.reopenrecipes>Ré-ouvrir sur les recettes après fermeture?</TooManyBaro.options.name.reopenrecipes>
+  <TooManyBaro.options.tooltip.reopenrecipes>Cocher si vous voulez que le mod ré-ouvre l'interface sur l'onglet des recettes après chaque fermeture.
+  Décocher si vous voulez que le mod s'ouvre sur le dernier onglet ouvert.</TooManyBaro.options.tooltip.reopenrecipes>
+</infotexts>

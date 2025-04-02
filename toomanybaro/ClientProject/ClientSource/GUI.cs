@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using System.Timers;
+﻿using System.Timers;
 using Barotrauma;
 using Barotrauma.Extensions;
 using Microsoft.Xna.Framework;
 using static Barotrauma.FabricationRecipe;
-using static Barotrauma.Networking.MessageFragment;
 
 namespace tooManyBaro.ClientSource
 {
@@ -18,7 +11,9 @@ namespace tooManyBaro.ClientSource
     {
         recipes,
         deconstructs,
-        infos
+        infos,
+        options,
+        search
     }
 
     class GUI
@@ -36,6 +31,7 @@ namespace tooManyBaro.ClientSource
         private static GUILayoutGroup? paddedUsageFrame;
 
         private static List<GUIComponent> allGUIComponents = new();
+
 
         public static System.Timers.Timer? _Refresh_multiple_item;
 
@@ -72,7 +68,7 @@ namespace tooManyBaro.ClientSource
         {
             if (_Refresh_multiple_item == null)
             {
-                _Refresh_multiple_item = new System.Timers.Timer(2000);
+                _Refresh_multiple_item = new System.Timers.Timer(Options.refresh_time);
                 _Refresh_multiple_item.Elapsed += refreshMultipleRequired;
                 _Refresh_multiple_item.AutoReset = true;
             }
@@ -118,11 +114,16 @@ namespace tooManyBaro.ClientSource
             {
                 drawInfos();
             }
+            else if (menuopen == GUIToomManyBaro.options)
+                drawOptions();
+            else if (menuopen == GUIToomManyBaro.search)
+                GUIsearch.drawSearch(wholeframe);
             else
             {
                 drawRecipes(wholeframe);
                 menuopen = GUIToomManyBaro.recipes;
             }
+
             var rightSideButtonList = new GUIListBox(new RectTransform(new Vector2(0.16f, 1f), innerFrame.rectTransform), style: null)
             {
                 Spacing = 20
@@ -171,17 +172,48 @@ namespace tooManyBaro.ClientSource
                     return true;
                 }
             };
+            new GUIButton(new RectTransform(new Vector2(1f, 0.1f), rightSideButtonList.Content.rectTransform)
+            {
+                //RelativeOffset = new Vector2(0.05f,0f)
+            }, "Search")
+            {
+                OnClicked = (GUIButton button, object obj) =>
+                {
+                    menuopen = GUIToomManyBaro.search;
+                    Open(CharacterHUD.HUDFrame.rectTransform);
+                    return true;
+                }
+            };
+            new GUIButton(new RectTransform(new Vector2(1f, 0.1f), rightSideButtonList.Content.rectTransform)
+            {
+                RelativeOffset = new Vector2(0.0f,0.2f)
+            }, "Mod options")
+            {
+                OnClicked = (GUIButton button, object obj) =>
+                {
+                    menuopen = GUIToomManyBaro.options;
+                    Open(CharacterHUD.HUDFrame.rectTransform);
+                    return true;
+                }
+            };
             _Refresh_multiple_item.Start();
         }
+        public static GUIFrame? infosPadded;
+        public static GUILayoutGroup? infosFrame;
+        public static GUIListBox? infosFrameVerticalSplit;        
 
         public static void drawInfos()
         {
             if (topFrame == null) return;
             if (InventoryPatch.LastOver == null) return;
+            if(infosPadded != null){
+                infosPadded.ClearChildren();
+            }
 
-            var infosPadded = new GUIFrame(new RectTransform(new Vector2(0.96f, 0.96f), topFrame.rectTransform, Anchor.Center), style: "itemUI");
-            var infosFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.9f, 0.9f), infosPadded.rectTransform, anchor: Anchor.Center));
-            var infosFrameVerticalSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f), infosFrame.rectTransform), style: null)
+
+            infosPadded = new GUIFrame(new RectTransform(new Vector2(0.96f, 0.96f), topFrame.rectTransform, Anchor.Center), style: "itemUI");
+            infosFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.9f, 0.9f), infosPadded.rectTransform, anchor: Anchor.Center));
+            infosFrameVerticalSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f), infosFrame.rectTransform), style: null)
             {
                 Spacing = 40,
             };
@@ -198,11 +230,11 @@ namespace tooManyBaro.ClientSource
             new GUIFrame(new RectTransform(new Vector2(0.01f, 0.6f), infosFrameHorizontalSplitList.Content.RectTransform), style: "VerticalLine");
             // Right side for the tooltip
             var rightSideFrame = new GUILayoutGroup(new RectTransform(new Vector2(0.6f, 1f), infosFrameHorizontalSplitList.Content.rectTransform));
-            new GUITextBlock(new RectTransform(new Vector2(1f, 1f), rightSideFrame.rectTransform), RichString.Rich(InventoryPatch.LastOver.GetTooltip(Character.controlled)));
-
+            new GUITextBlock(new RectTransform(new Vector2(1f, 1f), rightSideFrame.rectTransform), RichString.Rich(InventoryPatch.LastOver.GetTooltip(Character.controlled)))
+            {
+                Wrap = true,  
+            };
             // Bottom side, diverse infos.
-
-            // Price: 
             var priceFrameNotScrollable = new GUIFrame(new RectTransform(new Vector2(1f, 0.6f), infosFrameVerticalSplit.Content.rectTransform), style: null);
             var priceFrame = new GUIListBox(new RectTransform(new Vector2(1f, 1f), priceFrameNotScrollable.rectTransform),style: null);
             var priceFrameHorizontaleSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f), priceFrame.Content.rectTransform), isHorizontal: true, style: null);
@@ -210,7 +242,6 @@ namespace tooManyBaro.ClientSource
             {
                 Spacing = 20
             };
-
             var priceFramePriceValuesVerticalSplit = new GUIListBox(new RectTransform(new Vector2(0.3f, 1f), priceFrameHorizontaleSplit.Content.rectTransform), style: null)
             {
                 Spacing = 20
@@ -219,7 +250,6 @@ namespace tooManyBaro.ClientSource
             {
                 Spacing = 20
             };
-            
             string reputationNeeded = "";
             FactionPrefab? foundFaction = null;
             if (FactionPrefab.Prefabs.Any() && InventoryPatch.LastOver.DefaultPrice != null && InventoryPatch.LastOver.DefaultPrice.RequiredFaction != null)
@@ -261,24 +291,15 @@ namespace tooManyBaro.ClientSource
             if (reput != -1)
                 reputationNeeded += $"[‖color:{GUIStyle.ColorReputationVeryHigh.Value}‖{reput}‖color:end‖]";
 
-            
-
-
-            /// <summary>generate a list of text block from the allTexts list. Can be supplied with custom expression to generate the text to fill from the list.</summary>
-            ///<example>drawAllText(priceFrameBooleanVerticalSplit.Content.rectTransform,
-            ///id => { return string.Concat(id, string.Concat(Enumerable.Repeat(" ", (bigger - id.Length)))); },
-            ///    (id, text) => { return $"{id}: ‖color:{Color.Gold}‖{text}‖color:end‖"; }
-            ///    );
-            ///</ example>
-            
             var needUnlock = false;
             if (InventoryPatch.LastOver.DefaultPrice != null)
                 needUnlock = InventoryPatch.LastOver.DefaultPrice.RequiresUnlock;
+            allTexts.Clear();
             newText(("Can be Bought", addBoolRichString(InventoryPatch.LastOver.CanBeBought).ToString()));
             newText(("Can be Sold", addBoolRichString(InventoryPatch.LastOver.CanBeSold).ToString()));
             newText(("Need unlock", addBoolRichString(needUnlock).ToString()));
             newText(("Could you buy", addBoolRichString(InventoryPatch.LastOver.CanCharacterBuy() && InventoryPatch.LastOver.CanBeBought).ToString()));
-            drawAllTextN(priceFrameBooleanVerticalSplit.Content.rectTransform);
+            DrawAllText(priceFrameBooleanVerticalSplit.Content.rectTransform);
             bigger = 0;
             allTexts.Clear();
             newText(("Price", $"{InventoryPatch.LastOver.defaultPrice.Price}"));
@@ -286,34 +307,8 @@ namespace tooManyBaro.ClientSource
             newText(("Min Price", $"{InventoryPatch.LastOver.GetMinPrice()}"));
             newText(("faction", $"{faction}"));
             newText(("Reputation", $"{reputationNeeded}"));
-            drawAllTextN(priceFramePriceValuesVerticalSplit.Content.rectTransform);
-
-            //foreach (var tuple in allTexts)
-            //{
-            //    String id = string.Concat(tuple.Item1, string.Concat(Enumerable.Repeat(" ", (bigger - tuple.Item1.Length))));
-            //    RichString text = $"{id}: ‖color:{Color.Gold}‖{tuple.Item2}‖color:end‖";
-            //    new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), priceFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich(text))
-            //    {
-            //        CanBeFocused = false,
-            //        Font = GUIStyle.MonospacedFont,
-            //        TextSize = new Vector2(3f, 3f)
-            //    };
-            //}
-
-
-
-            //foreach (var tuple in allTexts)
-            //{
-            //    String id = string.Concat(tuple.Item1, string.Concat(Enumerable.Repeat(" ", (bigger - tuple.Item1.Length))));
-            //    RichString text = $"{id}: ‖color:{Color.Gold}‖{tuple.Item2}‖color:end‖";
-            //    new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), pricePerMerchantFramePriceValuesVerticalSplit.Content.rectTransform), RichString.Rich(text))
-            //    {
-            //        CanBeFocused = false,
-            //        Font = GUIStyle.MonospacedFont,
-            //        TextSize = new Vector2(3f, 3f)
-            //    };
-            //}
-            drawPricesWithinInfo(pricePerMerchantFramePriceValuesVerticalSplit);
+            DrawAllText(priceFramePriceValuesVerticalSplit.Content.rectTransform);
+            DrawPricesWithinInfo(pricePerMerchantFramePriceValuesVerticalSplit);
 
         }
         private static List<(String, String)> allTexts = new();
@@ -323,15 +318,22 @@ namespace tooManyBaro.ClientSource
             if (t.Item1.Length > bigger) bigger = t.Item1.Length;
             allTexts.Add(t);
         }
-        private static void drawAllText(RectTransform target, Func<String, String>? IdExpression, Func<String, String, String>? TextExpression)
+
+        /// <summary>generate a list of text block from the allTexts list. Can be supplied with custom expression to generate the text to fill from the list.</summary>
+        ///<example>drawAllText(priceFrameBooleanVerticalSplit.Content.rectTransform,
+        ///id => { return string.Concat(id, string.Concat(Enumerable.Repeat(" ", (bigger - id.Length)))); },
+        ///    (id, text) => { return $"{id}: ‖color:{Color.Gold}‖{text}‖color:end‖"; }
+        ///    );
+        ///</ example>
+        private static void DrawAllText(RectTransform target, Func<String, String>? IdExpression, Func<String, String, String>? TextExpression)
         {
             if (IdExpression == null) IdExpression = id => { return string.Concat(id, string.Concat(Enumerable.Repeat(" ", (bigger - id.Length)))); };
             if (TextExpression == null) TextExpression = (id, text) => { return $"{id}: ‖color:{Color.Gold}‖{text}‖color:end‖"; };
 
             foreach (var tuple in allTexts)
             {
-                String id = IdExpression(tuple.Item1);// string.Concat(tuple.Item1, string.Concat(Enumerable.Repeat(" ", (bigger - tuple.Item1.Length))));
-                RichString text = TextExpression(tuple.Item1, tuple.Item2);//$"{id}: ‖color:{Color.Gold}‖{tuple.Item2}‖color:end‖";
+                String id = IdExpression(tuple.Item1);
+                RichString text = TextExpression(tuple.Item1, tuple.Item2);
                 new GUITextBlock(new RectTransform(new Vector2(1f, 0.1f), target), RichString.Rich(text))
                 {
                     CanBeFocused = false,
@@ -340,15 +342,18 @@ namespace tooManyBaro.ClientSource
                 };
             }
         }
-        private static void drawAllTextN(RectTransform target) { drawAllText(target, null, null); }
 
-        private static void drawPricesWithinInfo(GUIListBox targetList)
+        private static void DrawAllText(RectTransform target)
+        {
+            DrawAllText(target, null, null);
+        }
+
+        private static void DrawPricesWithinInfo(GUIListBox targetList)
         {
             targetList.ClearChildren();
             if (InventoryPatch.LastOver == null) return;
             var buttonSwapPriceBuyOrSellf = new GUIButton(new RectTransform(new Vector2(1f, 0.1f), targetList.Content.rectTransform)
             {
-                //RelativeOffset = new Vector2(0f, -0.2f)
             }, (draw_info_buy)?"Sell":"Buy")
             {
                 OnClicked = (GUIButton button, object obj) =>
@@ -363,12 +368,14 @@ namespace tooManyBaro.ClientSource
                         draw_info_buy= true;
                         button.textBlock.text = "Sell";
                     }
-                    drawPricesWithinInfo(targetList);
+                    DrawPricesWithinInfo(targetList);
                     return true;
                 }
             };
+            var defaultPrice = 0;
             allTexts.Clear();
-            DebugConsole.NewMessage($"draw {draw_info_buy}");
+            if( InventoryPatch.LastOver.defaultPrice != null)
+                defaultPrice = InventoryPatch.LastOver.defaultPrice.Price;
             var stack = draw_info_buy ? InventoryPatch.LastOver.GetBuyPricesUnder() : InventoryPatch.LastOver.GetSellPricesOver();
             foreach (var store in stack)
             {
@@ -393,13 +400,79 @@ namespace tooManyBaro.ClientSource
                     }
 
                 }
-                var textValue = $"{p} {prices.BuyingPriceMultiplier}x {reputation}";
+                var color = (draw_info_buy) ? Color.Magenta : Color.Orange;
+                var difference = $"‖color:{color}‖{(prices.Price - defaultPrice)}‖color:end‖";
+                var textValue = $"{p} ({difference}) {reputation}";
                 newText((merchant, textValue));
             }
-            drawAllTextN(targetList.Content.rectTransform);
+            DrawAllText(targetList.Content.rectTransform);
         }
 
+        public static void drawOptions()
+        {
+            if (topFrame == null) return;
+            var mainOptionsFrame = new GUIFrame(new RectTransform(new Vector2(1f,1f),topFrame.rectTransform),style:null);
+            var mainScrollableOption = new GUIListBox(new RectTransform(new Vector2(1f,1f), mainOptionsFrame.rectTransform),style:null);
+            var bigHorizontaleSplit = new GUIListBox(new RectTransform(new Vector2(1f,1f),mainScrollableOption.Content.rectTransform),style:null, isHorizontal:true);
+            var leftBHS = new GUIListBox(new RectTransform(new Vector2(0.5f,1f),bigHorizontaleSplit.Content.rectTransform), style:null);
+            var rightBHS = new GUIListBox(new RectTransform(new Vector2(0.5f,1f),bigHorizontaleSplit.Content.rectTransform), style:null);
 
+
+            // RefreshTimer
+            var refreshTime_Frame = new GUIFrame(new RectTransform(new Vector2(1f, 0.1f), leftBHS.Content.rectTransform), style:null);
+            var refreshTime_HList = new GUIListBox(new RectTransform(new Vector2(1f, 1f), refreshTime_Frame.rectTransform), style: null, isHorizontal: true)
+            {
+                ToolTip = TextManager.Get("TooManyBaro.options.tooltip.refreshtime")?.Value ?? "",
+            };
+            var optionName = TextManager.Get("TooManyBaro.options.name.refreshtime")?.Value ?? "Refresh Time";
+            var refreshTime_Name = new GUITextBlock(new RectTransform(new Vector2(0.5f,1f), refreshTime_HList.Content.rectTransform), optionName)
+            {
+                CanBeFocused = false,
+                Wrap = true
+            };
+            var refreshTime_Input = new GUINumberInput(new RectTransform(new Vector2(0.3f, 1f), refreshTime_HList.Content.rectTransform), NumberType.Int)
+            {
+                OnValueChanged = (GUINumberInput input) =>
+                {
+                    int time = input.intValue;
+                    if (time < 100 || time > 6 * 1e7)
+                    {
+                        time = Options.refresh_time;
+                    }
+                    else
+                    {
+                        Options.refresh_time = time;
+                    }
+                    if (_Refresh_multiple_item != null)
+                        _Refresh_multiple_item.Interval = time;
+                }
+            };
+            var v = Options.refresh_time;
+            refreshTime_Input.TextBox.Text = $"{v}";
+
+            // Reopen recipes
+            var reopenRecipes_Frame = new GUIFrame(new RectTransform(new Vector2(1f, 0.1f), leftBHS.Content.rectTransform), style: null);
+            var reopenRecipes_HList = new GUIListBox(new RectTransform(new Vector2(1f, 1f), reopenRecipes_Frame.rectTransform), style: null, isHorizontal: true)
+            {
+                ToolTip = TextManager.Get("TooManyBaro.options.tooltip.reopenrecipes")?.Value ?? "",
+            };
+            optionName = TextManager.Get("TooManyBaro.options.name.reopenRecipes")?.Value ?? "Reopen recipes upon close";
+            var reopenRecipes_Name = new GUITextBlock(new RectTransform(new Vector2(0.5f, 1f), reopenRecipes_HList.Content.rectTransform), optionName)
+            {
+                CanBeFocused = false,
+                Wrap = true
+            };
+            var reopenRecipes_Input = new GUITickBox(new RectTransform(new Vector2(0.3f, 0.3f), reopenRecipes_HList.Content.rectTransform), "")
+            {
+                isSelected = Options.reopen_recipes_after_close,
+                OnSelected = (GUITickBox input) =>
+                {
+                    Options.reopen_recipes_after_close = input.isSelected;
+                    return true;
+                }
+            };
+            
+        }
         //  color symbol ‖
         public static RichString addBoolRichString(bool B, string text = "")
         {
@@ -666,7 +739,7 @@ namespace tooManyBaro.ClientSource
         static public List<(GUIImage, RequiredItem)> item_swap_over_time = new();
 
         static int _refreshIconIndex = 0;
-        static public void refreshMultipleRequired(Object source, ElapsedEventArgs e)
+        static public void refreshMultipleRequired(Object? source, ElapsedEventArgs e)
         {
             _refreshIconIndex++;
             if (item_swap_over_time.Count > 0)
@@ -692,6 +765,9 @@ namespace tooManyBaro.ClientSource
             Clear();
             isOpen = false;
             InventoryPatch.swapSave.Clear();
+            if (Options.reopen_recipes_after_close) menuopen = GUIToomManyBaro.recipes;
+            //if (menuopen == GUIToomManyBaro.options)
+            //    menuopen = GUIToomManyBaro.recipes;
         }
 
         /// <summary>
@@ -714,7 +790,7 @@ namespace tooManyBaro.ClientSource
                 }
             }
             allGUIComponents.Clear();
-            imageToItem.Clear();
+            clearImgToItem();
         }
 
         /// <summary>
@@ -742,7 +818,21 @@ namespace tooManyBaro.ClientSource
                 }
             }
             if (toswapto != null)
+            {
+                if (menuopen == GUIToomManyBaro.search)
+                    menuopen = GUIToomManyBaro.infos;
                 InventoryPatch.swapSubItem(toswapto);
+            }
+        }
+
+        internal static void clearImgToItem()
+        {
+            //if(imageToItem.Any())
+            //foreach(var T in imageToItem)
+            //    {
+                    
+            //    }
+            imageToItem.Clear();
         }
     }
 
