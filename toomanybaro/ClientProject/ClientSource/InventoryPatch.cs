@@ -13,10 +13,32 @@ namespace tooManyBaro.ClientSource
     class InventoryPatch
     {
 
-        static public List<Barotrauma.ItemPrefab> resultOfSearch = new List<ItemPrefab>();
+        /// <summary>
+        /// Currently targeted item. Either O or LeftClicked last. (or RightClick brought it)
+        /// </summary>
         static public Barotrauma.ItemPrefab? LastOver = null;
-        static bool searchDone = true;
+        /// <summary>
+        /// Last item the mouse overed. Is used to determine when player press O if we should swap.
+        /// </summary>
+        static public Barotrauma.ItemPrefab? itemMouseHovering;
+
+        public static List<Barotrauma.ItemPrefab> resultOfSearch = new List<ItemPrefab>();
+        public static List<Barotrauma.ItemPrefab> SearchListPrefabs = new List<ItemPrefab>();
+        public static List<(Barotrauma.ItemPrefab,Identifier)> subWeaponsMatchingTags = new();
+        public static List<ItemPrefab> ProduceWhenDeconstruct = new List<ItemPrefab>();
+
+        public static List<FabricationRecipe> Producers = new List<FabricationRecipe>();
+        public static List<FabricationRecipe> Usages = new List<FabricationRecipe>();
+        public static List<FabricationRecipe> allRecipes = new List<FabricationRecipe>();
+
+        public static List<DeconstructItem> DeconstructItems = new List<DeconstructItem>();
+
         static DateTime timeCallSearch = DateTime.Now;
+        static Rectangle target_interactRect;
+        static bool searchDone = true;
+
+        
+
         /// <summary>
         /// Check after the keyboard input if mouse still within the ?hitbox? of the item Hovered.
         /// </summary>
@@ -153,13 +175,6 @@ namespace tooManyBaro.ClientSource
             }
         }
 
-        public static List<FabricationRecipe> Producers = new List<FabricationRecipe>();
-        public static List<FabricationRecipe> Usages = new List<FabricationRecipe>();
-        public static List<DeconstructItem> DeconstructItems = new List<DeconstructItem>();
-        public static List<ItemPrefab> ProduceWhenDeconstruct = new List<ItemPrefab>();
-
-
-        public static List<FabricationRecipe> allRecipes = new List<FabricationRecipe>();
         /// <summary>
         /// Will iterate through all the fabricator recipes and deconstructor to search for any link with the item
         /// that is LastOver.
@@ -221,9 +236,9 @@ namespace tooManyBaro.ClientSource
         static public void searchItemWithString(string name)
         {
             resultOfSearch.Clear();
-            foreach (var item in ItemPrefab.Prefabs)
+            foreach (var item in SearchListPrefabs)
             {
-                if(item.Name.Contains(name))
+                if(item.Name.ToLower().Contains(name.ToLower()))
                     resultOfSearch.Add(item);
 
                     //if (Regex.IsMatch(item.name.Value, name))
@@ -231,9 +246,6 @@ namespace tooManyBaro.ClientSource
             return;
         }
 
-        static Rectangle target_interactRect;
-
-        static public Barotrauma.ItemPrefab? itemMouseHovering;
 
         /// <summary>
         /// Core function of the mod, (weird postfix with Harmony, i had nothing better).
@@ -272,6 +284,17 @@ namespace tooManyBaro.ClientSource
                     target_interactRect = interactRect;
                 }
             }
+        }
+
+
+        public static List<(ItemPrefab, Identifier)>? ammoInformation()
+        {
+            if(LastOver != null)
+            {
+                var matchingsGuns = subWeaponsMatchingTags.FindAll(el => LastOver.Tags.Contains(el.Item2));
+                return matchingsGuns;
+            }
+            return null;
         }
     }
 

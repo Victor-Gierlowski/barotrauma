@@ -15,6 +15,10 @@ namespace tooManyBaro.ClientSource
 
     class Options
     {
+
+        /// <summary>
+        /// Subclass use to store and use values of options.
+        /// </summary>
         public class option
         {
 
@@ -37,7 +41,9 @@ namespace tooManyBaro.ClientSource
         }
 
 
-
+        /// <summary>
+        /// Option filename. NOT LOCATION => is determine within the execution base on the folder of either local or workshop.
+        /// </summary>
         public static string USER_OPTION_FILE = "TooManyBaro_Options.xml";
         public static option? defaultOptions;
         public static option? userOptions;
@@ -98,6 +104,9 @@ namespace tooManyBaro.ClientSource
             }
         }
 
+        /// <summary>
+        /// Main function to call and load the options. Will generate the 2 objects, user and default option.
+        /// </summary>
         public static void loadOptions()
         {
 
@@ -119,12 +128,22 @@ namespace tooManyBaro.ClientSource
             }
         }
 
+        /// <summary>
+        /// the function periodically called by the timer if a save need to happen.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private static void save_reminder(object? sender, ElapsedEventArgs e)
         {
             saveOptions();
         }
 
-        public static option? loadUserOptions()
+
+        /// <summary>
+        /// try to load the option file containing the user defined options.
+        /// </summary>
+        /// <returns>object defined either with file value or default one.</returns>
+        public static option loadUserOptions()
         {
             option uOptions= new option();
                 if (!File.Exists(USER_OPTION_FILE)) return null;
@@ -133,6 +152,10 @@ namespace tooManyBaro.ClientSource
             return uOptions;
         }
 
+        /// <summary>
+        /// Save the options of the user to the file. If function  has been called too recently it will be cancel and instead ask for a reminder.
+        /// </summary>
+        /// <returns></returns>
         public static bool saveOptions()
         {
             TimeSpan elapsed = DateTime.Now - timeCallSave;
@@ -147,7 +170,7 @@ namespace tooManyBaro.ClientSource
                 CRY("Saving but there is not option object");
                 return false;
             }
-            XmlDocument xmlDoc = new XmlDocument();
+            XmlDocument xmlDoc = new();
             XmlDeclaration xmlDeclaration = xmlDoc.CreateXmlDeclaration("1.0", "UTF-8", null);
             XmlElement root = xmlDoc.DocumentElement;
             xmlDoc.InsertBefore(xmlDeclaration, root);
@@ -155,8 +178,11 @@ namespace tooManyBaro.ClientSource
             xmlDoc.AppendChild(configElement);
             XmlElement guiElement = xmlDoc.CreateElement(string.Empty, "GUI", string.Empty);
             XmlAttribute refreshTimeAttr = xmlDoc.CreateAttribute(string.Empty, "refresh_time", string.Empty);
+            XmlAttribute reopenAttr = xmlDoc.CreateAttribute(string.Empty, "reopen_recipes_after_close", string.Empty);
+            reopenAttr.Value = $"{userOptions.reopen_recipes_after_close}";
             refreshTimeAttr.Value = $"{userOptions.refresh_time}";
             guiElement.Attributes.Append(refreshTimeAttr);
+            guiElement.Attributes.Append(reopenAttr);
             configElement.AppendChild(guiElement);
             try
             {
@@ -211,6 +237,7 @@ namespace tooManyBaro.ClientSource
             if (goption == null)
             {
                 optionTarget.refresh_time = DEFAULT_refresh_time;
+                optionTarget.reopen_recipes_after_close = DEFAULT_reopen_recipes_after_close;
                 return;
             }
             var rfile = goption.Attribute("refresh_time")?.Value;

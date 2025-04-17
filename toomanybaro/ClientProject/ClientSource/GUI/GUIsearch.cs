@@ -14,7 +14,10 @@ namespace tooManyBaro.ClientSource
         public static GUITextBox? searchInput;
         public static GUIListBox? searchResultList;
 
-
+        /// <summary>
+        /// Main function to draw the search tab
+        /// </summary>
+        /// <param name="masterFrame"></param>
         public static void drawSearch(GUIFrame masterFrame)
         {
             var masterVerticalSplit = new GUIListBox(new RectTransform(new Vector2(1f, 1f), masterFrame.RectTransform));
@@ -28,6 +31,9 @@ namespace tooManyBaro.ClientSource
             searchResultList = new GUIListBox(new RectTransform(new Vector2(1f,0.9f),masterVerticalSplit.Content.rectTransform));
         }
 
+        /// <summary>
+        /// Upon new search, need to update all the item shown.
+        /// </summary>
         public static void update()
         {
             tooManyBaro.ClientSource.GUI.clearImgToItem();
@@ -43,10 +49,12 @@ namespace tooManyBaro.ClientSource
                 var img = new GUIImage(new RectTransform(new Vector2(1f, 1f), itemFrame.RectTransform), item.InventoryIcon ?? item.Sprite)
                 {
                     ToolTip = RichString.Rich(item.GetTooltip(Character.Controlled)),
+                    color = item.SpriteColor
                 };
                 tooManyBaro.ClientSource.GUI.imageToItem.Add((img, item));
                 count++;
-            }}
+            }
+        }
 
 
     }
