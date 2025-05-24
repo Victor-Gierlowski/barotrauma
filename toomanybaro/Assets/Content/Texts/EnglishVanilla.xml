@@ -5,5 +5,7 @@
   <TooManyBaro.options.name.reopenrecipes>Reopen recipes after closing HUD?</TooManyBaro.options.name.reopenrecipes>
     <TooManyBaro.options.tooltip.reopenrecipes>Check if you want the UI to automatically reopen the recipes as the first tab after you close it.
     When it's not check, when you press O the UI will open on the last tab open.</TooManyBaro.options.tooltip.reopenrecipes>
+	<TooManyBaro.options.name.openHUD>Open HUD</TooManyBaro.options.name.openHUD>
+	<TooManyBaro.options.tooltip.openHUD>Choose the key that will open the HUD. Default Key is 'O'. You cannot use the mouse for this input.</TooManyBaro.options.tooltip.openHUD>
 
 </infotexts>

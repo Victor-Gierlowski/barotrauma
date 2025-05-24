@@ -265,7 +265,6 @@ namespace tooManyBaro.ClientSource
                     {
                         Spacing = 20
                     };
-                    gunTuple.Item1.
                     new GUIImage(new RectTransform(new Vector2(0.2f,1f), horizontalTurretList.Content.rectTransform), gunTuple.Item1.Sprite ?? gunTuple.Item1.InventoryIcon)
                     {
                         color = gunTuple.Item1.SpriteColor

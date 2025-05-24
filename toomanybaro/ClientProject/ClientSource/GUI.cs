@@ -192,7 +192,7 @@ namespace tooManyBaro.ClientSource
             };
             new GUIButton(new RectTransform(new Vector2(1f, 0.1f), rightSideButtonList.Content.rectTransform)
             {
-                RelativeOffset = new Vector2(0.0f,0.2f)
+                RelativeOffset = new Vector2(0.0f,0.1f)
             }, "Mod options")
             {
                 OnClicked = (GUIButton button, object obj) =>

@@ -9,6 +9,7 @@ using System.Xml;
 using System.Xml.Linq;
 using Barotrauma;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 
 namespace tooManyBaro.ClientSource
 {
@@ -32,10 +33,13 @@ namespace tooManyBaro.ClientSource
                     if (value >= 100 && value < 1e7)
                     {
                         _refresh_time = value;
-                    }
+                    }else
+                        _refresh_time = DEFAULT_refresh_time;
                     //DebugConsole.NewMessage($"{_refresh_time}");
                 }
             }
+
+            public KeyOrMouse openHUD = Keys.O;
 
             public bool reopen_recipes_after_close;
         }
@@ -143,10 +147,10 @@ namespace tooManyBaro.ClientSource
         /// try to load the option file containing the user defined options.
         /// </summary>
         /// <returns>object defined either with file value or default one.</returns>
-        public static option loadUserOptions()
+        public static option? loadUserOptions()
         {
             option uOptions= new option();
-                if (!File.Exists(USER_OPTION_FILE)) return null;
+            if (!File.Exists(USER_OPTION_FILE)) return null;
             XDocument xmlDefaultOptions = XDocument.Load(USER_OPTION_FILE);
             loadGUIOptions(xmlDefaultOptions.Descendants("GUI").FirstOrDefault(), uOptions);
             return uOptions;
@@ -183,6 +187,11 @@ namespace tooManyBaro.ClientSource
             refreshTimeAttr.Value = $"{userOptions.refresh_time}";
             guiElement.Attributes.Append(refreshTimeAttr);
             guiElement.Attributes.Append(reopenAttr);
+            XmlAttribute openHUDAttr = xmlDoc.CreateAttribute(string.Empty, "openHUD", string.Empty);
+            openHUDAttr.Value = userOptions.openHUD.ToString();
+            guiElement.Attributes.Append(openHUDAttr);
+
+
             configElement.AppendChild(guiElement);
             try
             {
@@ -208,7 +217,7 @@ namespace tooManyBaro.ClientSource
             }
             USER_OPTION_FILE = $"{mod.Dir}/{USER_OPTION_FILE}";
             string file = mod.Dir + "/Content/Options/default_options.xml";
-
+            DebugConsole.NewMessage(USER_OPTION_FILE);
             foreach (var i in ContentPackageManager.WorkshopPackages)
             {
                 DebugConsole.NewMessage($"{i.Name}");
@@ -238,6 +247,7 @@ namespace tooManyBaro.ClientSource
             {
                 optionTarget.refresh_time = DEFAULT_refresh_time;
                 optionTarget.reopen_recipes_after_close = DEFAULT_reopen_recipes_after_close;
+                optionTarget.openHUD = Keys.O;
                 return;
             }
             var rfile = goption.Attribute("refresh_time")?.Value;
@@ -255,6 +265,7 @@ namespace tooManyBaro.ClientSource
                 reopen_recipes_after_close = bool.Parse(reopenrecipes);
             }
             optionTarget.reopen_recipes_after_close = reopen_recipes_after_close;
+            optionTarget.openHUD = goption.GetAttributeKeyOrMouse("openHUD", Keys.O);
         }
 
     }

@@ -21,8 +21,16 @@ namespace tooManyBaro.ClientSource
             Keys[] kPressed = PlayerInput.keyboardState.GetPressedKeys();
             foreach (Keys key in kPressed)
             {
-                if (key == Keys.O)
-                    tooManyBaro.ClientSource.InventoryPatch.checkInput();
+                if(tooManyBaro.ClientSource.Options.userOptions == null)
+                {
+                    if(key == Keys.O)
+                        tooManyBaro.ClientSource.InventoryPatch.checkInput();
+                }
+                else
+                {
+                    if (key == tooManyBaro.ClientSource.Options.userOptions.openHUD)
+                        tooManyBaro.ClientSource.InventoryPatch.checkInput();
+                }
             }
             var lftclick = PlayerInput.PrimaryMouseButtonClicked();
             var rghclick = PlayerInput.SecondaryMouseButtonClicked();
