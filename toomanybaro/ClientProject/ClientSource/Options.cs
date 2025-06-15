@@ -62,18 +62,20 @@ namespace tooManyBaro.ClientSource
                 if (userOptions == null)
                 {
                     if (defaultOptions == null) return DEFAULT_refresh_time;
-                    else return defaultOptions.refresh_time;
+                    else return (defaultOptions.refresh_time > 0)? defaultOptions.refresh_time : DEFAULT_refresh_time;
                 }
-                return userOptions.refresh_time;
+                if(userOptions.refresh_time > 0)
+                    return userOptions.refresh_time;
+                return DEFAULT_refresh_time;
             }
             set
             {
-                if (userOptions != null)
+                if (userOptions != null && value > 0)
                 {
                     userOptions.refresh_time = value;
                     saveOptions();
                 }
-                else
+                else if(userOptions == null)
                 {
                     userOptions = new option();
                     if (defaultOptions != null) defaultOptions.CopyValuesTo(userOptions);

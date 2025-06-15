@@ -50,7 +50,12 @@ namespace toomanybaro.ClientSource
                         Options.refresh_time = time;
                     }
                     if (tooManyBaro.ClientSource.GUI._Refresh_multiple_item != null)
-                        tooManyBaro.ClientSource.GUI._Refresh_multiple_item.Interval = time;
+                        if(time == 0 || time < 100 || time > 6 * 1e7)
+                        {
+                            tooManyBaro.ClientSource.GUI._Refresh_multiple_item.Interval = tooManyBaro.ClientSource.Options.defaultOptions?.refresh_time ?? 1000;
+                        }
+                        else
+                            tooManyBaro.ClientSource.GUI._Refresh_multiple_item.Interval = time;
                 }
             };
             var v = Options.refresh_time;
