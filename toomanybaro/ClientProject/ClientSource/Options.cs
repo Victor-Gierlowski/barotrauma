@@ -165,7 +165,7 @@ namespace tooManyBaro.ClientSource
         public static bool saveOptions()
         {
             TimeSpan elapsed = DateTime.Now - timeCallSave;
-            if (!(elapsed.TotalMilliseconds >= 2000))
+            if (!(elapsed.TotalMilliseconds >= 200))
             {
                 if (__reminder_to_save_options == null || __reminder_to_save_options.Enabled == true) return false;
                 __reminder_to_save_options.Enabled = true;
@@ -198,7 +198,9 @@ namespace tooManyBaro.ClientSource
             try
             {
                 xmlDoc.Save(USER_OPTION_FILE);
-            }catch(XmlException err)
+                DebugConsole.NewMessage($"TooManyBaro: Saved options to {USER_OPTION_FILE}", color: Color.GreenYellow);
+            }
+            catch(XmlException err)
             {
                 CRY($"{err.Message} | couldn't save the options.");
                 return false;
@@ -209,9 +211,12 @@ namespace tooManyBaro.ClientSource
         public static option loadDefault()
         {
             option defoptions= new option();
-            var mod = ContentPackageManager.LocalPackages.First(mod => mod.Name == "toomanybaro");
+            var mod = ContentPackageManager.WorkshopPackages.First(mod => mod.Name == "toomanybaro");
             if (mod == null)
-                mod = ContentPackageManager.WorkshopPackages.First(mod => mod.Name == "toomanybaro");
+            {
+                CRY("Worskhop package not found, trying local package");
+                mod = ContentPackageManager.LocalPackages.First(mod => mod.Name == "toomanybaro");
+            }
             if (mod == null)
             {
                 CRY("No mods package. ? ");
@@ -220,11 +225,6 @@ namespace tooManyBaro.ClientSource
             USER_OPTION_FILE = $"{mod.Dir}/{USER_OPTION_FILE}";
             string file = mod.Dir + "/Content/Options/default_options.xml";
             DebugConsole.NewMessage(USER_OPTION_FILE);
-            foreach (var i in ContentPackageManager.WorkshopPackages)
-            {
-                DebugConsole.NewMessage($"{i.Name}");
-            }
-            ;
             XDocument xmlDefaultOptions = XDocument.Load(file);
             if (xmlDefaultOptions != null)
             {
